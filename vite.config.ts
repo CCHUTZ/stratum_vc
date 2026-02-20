@@ -90,6 +90,29 @@ const VARIANT_META: Record<string, {
       'Market radar signals',
     ],
   },
+  stratum: {
+    title: 'Stratum Monitor - Deep Pattern Intelligence Dashboard',
+    description: 'Real-time civilizational analysis dashboard using Five Lenses framework: Identity, Demographics, Humiliation, Religious Networks, Civilizational Friction, and Cognitive Warfare',
+    keywords: 'civilizational analysis, geopolitical intelligence, religious networks, identity politics, demographic strategy, historical patterns, cognitive warfare, OSINT, intelligence analysis, pattern recognition, predictive analysis',
+    url: 'https://stratum.worldmonitor.app/',
+    siteName: 'Stratum Monitor',
+    shortName: 'StratumMonitor',
+    subject: 'Civilizational Pattern Analysis and Predictive Intelligence',
+    classification: 'Intelligence Analysis, Civilizational Studies, OSINT',
+    categories: ['news', 'intelligence'],
+    features: [
+      'Five Lenses Analysis',
+      'Historical pattern matching',
+      'Civilizational friction tracking',
+      'Religious power center mapping',
+      'Demographic analysis',
+      'Cognitive warfare monitoring',
+      'Predictive cycle analysis',
+      'Historical trauma sites',
+      'Asabiyyah nodes tracking',
+      '30-90 day predictions',
+    ],
+  },
 };
 
 const activeVariant = process.env.VITE_VARIANT || 'full';

@@ -115,3 +115,22 @@ export {
 
 // Gulf FDI investment database
 export { GULF_INVESTMENTS } from './gulf-fdi';
+
+// Stratum variant - civilizational analysis
+export {
+  ALL_STRATUM_LOCATIONS,
+  FRICTION_ZONES,
+  RELIGIOUS_POWER_CENTERS,
+  ASABIYYAH_NODES,
+  TRAUMA_SITES,
+  COGNITIVE_WARFARE_HUBS,
+  getLocationsByLens,
+  getLocationsByIntensity,
+  getLocationsByCategory,
+  type StratumLocation,
+} from './stratum-geo';
+
+export {
+  STRATUM_ENTITIES,
+  type StratumEntity,
+} from './stratum-companies';

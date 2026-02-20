@@ -365,11 +365,89 @@ const FINANCE_MOBILE_MAP_LAYERS: MapLayers = {
 };
 
 // ============================================
+// STRATUM PANELS (Civilizational Analysis)
+// ============================================
+const STRATUM_PANELS: Record<string, PanelConfig> = {
+  map: { name: 'Civilizational Map', enabled: true, priority: 1 },
+  'live-news': { name: 'Civilizational News', enabled: true, priority: 1 },
+  insights: { name: 'Five Lenses Analysis', enabled: true, priority: 1 },
+  stratum_tier1: { name: 'Core Analysis Feeds', enabled: true, priority: 1 },
+  middle_east: { name: 'Middle East', enabled: true, priority: 2 },
+  india: { name: 'India', enabled: true, priority: 2 },
+  mexico: { name: 'México', enabled: true, priority: 2 },
+  brazil: { name: 'Brasil', enabled: true, priority: 2 },
+  latam_regional: { name: 'LATAM Regional', enabled: true, priority: 2 },
+  europe: { name: 'Europe & Balkans', enabled: true, priority: 2 },
+  specialized: { name: 'Think Tanks & Analysis', enabled: true, priority: 2 },
+  monitors: { name: 'My Monitors', enabled: true, priority: 2 },
+};
+
+const STRATUM_MAP_LAYERS: MapLayers = {
+  conflicts: false,
+  bases: false,
+  cables: false,
+  pipelines: false,
+  hotspots: false,
+  ais: false,
+  nuclear: false,
+  irradiators: false,
+  sanctions: false,
+  weather: true,
+  economic: false,
+  waterways: false,
+  outages: false,
+  cyberThreats: true,
+  datacenters: false,
+  protests: true,
+  flights: false,
+  military: false,
+  natural: true,
+  spaceports: false,
+  minerals: false,
+  fires: false,
+  ucdpEvents: true,
+  displacement: true,
+  climate: false,
+  startupHubs: false,
+  cloudRegions: false,
+  accelerators: false,
+  techHQs: false,
+  techEvents: false,
+  stockExchanges: false,
+  financialCenters: false,
+  centralBanks: false,
+  commodityHubs: false,
+  gulfInvestments: false,
+};
+
+const STRATUM_MOBILE_MAP_LAYERS: MapLayers = {
+  ...STRATUM_MAP_LAYERS,
+  weather: false,
+  natural: false,
+  protests: true,
+  ucdpEvents: true,
+};
+
+// ============================================
 // VARIANT-AWARE EXPORTS
 // ============================================
-export const DEFAULT_PANELS = SITE_VARIANT === 'tech' ? TECH_PANELS : SITE_VARIANT === 'finance' ? FINANCE_PANELS : FULL_PANELS;
-export const DEFAULT_MAP_LAYERS = SITE_VARIANT === 'tech' ? TECH_MAP_LAYERS : SITE_VARIANT === 'finance' ? FINANCE_MAP_LAYERS : FULL_MAP_LAYERS;
-export const MOBILE_DEFAULT_MAP_LAYERS = SITE_VARIANT === 'tech' ? TECH_MOBILE_MAP_LAYERS : SITE_VARIANT === 'finance' ? FINANCE_MOBILE_MAP_LAYERS : FULL_MOBILE_MAP_LAYERS;
+export const DEFAULT_PANELS =
+  SITE_VARIANT === 'stratum' ? STRATUM_PANELS :
+  SITE_VARIANT === 'tech' ? TECH_PANELS :
+  SITE_VARIANT === 'finance' ? FINANCE_PANELS :
+  FULL_PANELS;
+
+export const DEFAULT_MAP_LAYERS =
+  SITE_VARIANT === 'stratum' ? STRATUM_MAP_LAYERS :
+  SITE_VARIANT === 'tech' ? TECH_MAP_LAYERS :
+  SITE_VARIANT === 'finance' ? FINANCE_MAP_LAYERS :
+  FULL_MAP_LAYERS;
+
+export const MOBILE_DEFAULT_MAP_LAYERS =
+  SITE_VARIANT === 'stratum' ? STRATUM_MOBILE_MAP_LAYERS :
+  SITE_VARIANT === 'tech' ? TECH_MOBILE_MAP_LAYERS :
+  SITE_VARIANT === 'finance' ? FINANCE_MOBILE_MAP_LAYERS :
+  FULL_MOBILE_MAP_LAYERS;
 
 // Monitor palette — fixed category colors persisted to localStorage (not theme-dependent)
 export const MONITOR_COLORS = [

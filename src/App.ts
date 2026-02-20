@@ -1698,6 +1698,15 @@ export class App {
               <span class="variant-icon">📈</span>
               <span class="variant-label">${t('header.finance')}</span>
             </a>
+            <span class="variant-divider"></span>
+            <a href="${this.isDesktopApp ? '#' : (SITE_VARIANT === 'stratum' ? '#' : 'https://stratum.worldmonitor.app')}"
+               class="variant-option ${SITE_VARIANT === 'stratum' ? 'active' : ''}"
+               data-variant="stratum"
+               ${!this.isDesktopApp && SITE_VARIANT !== 'stratum' ? 'target="_blank" rel="noopener"' : ''}
+               title="Stratum${SITE_VARIANT === 'stratum' ? ` ${t('common.currentVariant')}` : ''}">
+              <span class="variant-icon">🔷</span>
+              <span class="variant-label">Stratum</span>
+            </a>
           </div>
           <span class="logo">MONITOR</span><span class="version">v${__APP_VERSION__}</span>
           <a href="https://x.com/eliehabib" target="_blank" rel="noopener" class="credit-link">
@@ -2452,19 +2461,19 @@ export class App {
     // Sources modal
     this.setupSourcesModal();
 
-    // Variant switcher: switch variant locally on desktop (reload with new config)
-    if (this.isDesktopApp) {
-      this.container.querySelectorAll<HTMLAnchorElement>('.variant-option').forEach(link => {
-        link.addEventListener('click', (e) => {
-          const variant = link.dataset.variant;
-          if (variant && variant !== SITE_VARIANT) {
-            e.preventDefault();
-            localStorage.setItem('worldmonitor-variant', variant);
-            window.location.reload();
-          }
-        });
+    // Variant switcher: switch variant locally (reload with new config)
+    this.container.querySelectorAll<HTMLAnchorElement>('.variant-option').forEach(link => {
+      link.addEventListener('click', (e) => {
+        const variant = link.dataset.variant;
+        console.log('[App] Variant button clicked:', variant, 'current:', SITE_VARIANT);
+        if (variant && variant !== SITE_VARIANT) {
+          console.log('[App] Switching to variant:', variant);
+          e.preventDefault();
+          localStorage.setItem('worldmonitor-variant', variant);
+          window.location.reload();
+        }
       });
-    }
+    });
 
     // Fullscreen toggle
     const fullscreenBtn = document.getElementById('fullscreenBtn');
