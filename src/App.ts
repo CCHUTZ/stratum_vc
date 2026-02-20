@@ -58,6 +58,7 @@ import {
   PlaybackControl,
   StatusPanel,
   EconomicPanel,
+  CivilizationalPanel,
   SearchModal,
   MobileWarningModal,
   PizzIntIndicator,
@@ -2216,6 +2217,9 @@ export class App {
 
     const economicPanel = new EconomicPanel();
     this.panels['economic'] = economicPanel;
+
+    const civilizationalPanel = new CivilizationalPanel();
+    this.panels['stratum-civilizational'] = civilizationalPanel;
 
     // New Regional Panels
     const africaPanel = new NewsPanel('africa', t('panels.africa'));

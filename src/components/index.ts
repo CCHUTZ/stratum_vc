@@ -12,6 +12,7 @@ export * from './SignalModal';
 export * from './PlaybackControl';
 export * from './StatusPanel';
 export * from './EconomicPanel';
+export * from './CivilizationalPanel';
 export * from './SearchModal';
 export * from './MobileWarningModal';
 export * from './PizzIntIndicator';
