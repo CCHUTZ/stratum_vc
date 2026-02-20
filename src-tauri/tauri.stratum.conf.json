@@ -1,0 +1,28 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Stratum Monitor",
+  "mainBinaryName": "stratum-monitor",
+  "identifier": "app.worldmonitor.stratum.desktop",
+  "app": {
+    "windows": [
+      {
+        "title": "Stratum Monitor - Deep Pattern Intelligence",
+        "width": 1400,
+        "height": 900,
+        "resizable": true,
+        "fullscreen": false
+      }
+    ]
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["app", "dmg", "nsis", "msi", "appimage"],
+    "shortDescription": "Stratum Monitor - Civilizational Analysis",
+    "longDescription": "Real-time civilizational analysis using Five Lenses framework for pattern recognition and predictive intelligence",
+    "macOS": {
+      "hardenedRuntime": true,
+      "entitlements": null,
+      "exceptionDomain": null
+    }
+  }
+}
