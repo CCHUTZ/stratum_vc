@@ -151,7 +151,15 @@
     "techReadiness": "Teknoloji Hazirlik Endeksi",
     "gccInvestments": "GCC Yatirimlari",
     "geoHubs": "Jeopolitik Merkezler",
-    "liveWebcams": "Canli Web Kameralari"
+    "liveWebcams": "Canli Web Kameralari",
+    "stratum_tier1": "Temel Analiz",
+    "india": "Hindistan",
+    "mexico": "Meksika",
+    "brazil": "Brezilya",
+    "latam_regional": "LATAM Bölgesel",
+    "europe": "Avrupa ve Balkanlar",
+    "specialized": "Araştırma Enstitüleri",
+    "middle_east": "Ortadoğu"
   },
   "modals": {
     "search": {

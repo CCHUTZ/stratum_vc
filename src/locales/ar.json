@@ -151,7 +151,15 @@
     "techReadiness": "مؤشر الجاهزية التقنية",
     "gccInvestments": "استثمارات دول الخليج",
     "geoHubs": "مراكز جيوسياسية",
-    "liveWebcams": "كاميرات مباشرة"
+    "liveWebcams": "كاميرات مباشرة",
+    "stratum_tier1": "التحليل الأساسي",
+    "india": "الهند",
+    "mexico": "المكسيك",
+    "brazil": "البرازيل",
+    "latam_regional": "أمريكا اللاتينية الإقليمية",
+    "europe": "أوروبا والبلقان",
+    "specialized": "مراكز الفكر",
+    "middle_east": "الشرق الأوسط"
   },
   "modals": {
     "search": {

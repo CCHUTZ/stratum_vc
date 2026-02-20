@@ -59,7 +59,15 @@
     "geoHubs": "Geopolitical Hotspots",
     "polymarket": "Förutsägelser",
     "climate": "Klimatanomalier",
-    "liveWebcams": "Webbkameror"
+    "liveWebcams": "Webbkameror",
+    "stratum_tier1": "Huvudanalys",
+    "india": "Indien",
+    "mexico": "Mexiko",
+    "brazil": "Brasilien",
+    "latam_regional": "LATAM Regionalt",
+    "europe": "Europa och Balkan",
+    "specialized": "Think Tanks",
+    "middle_east": "Mellanöstern"
   },
   "modals": {
     "search": {

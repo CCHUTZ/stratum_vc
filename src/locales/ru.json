@@ -151,7 +151,15 @@
     "techReadiness": "Индекс технологической готовности",
     "gccInvestments": "Инвестиции стран Залива",
     "geoHubs": "Геополитические хабы",
-    "liveWebcams": "Веб-камеры"
+    "liveWebcams": "Веб-камеры",
+    "stratum_tier1": "Центральный анализ",
+    "india": "Индия",
+    "mexico": "Мексика",
+    "brazil": "Бразилия",
+    "latam_regional": "Региональная Латам",
+    "europe": "Европа и Балканы",
+    "specialized": "Аналитические центры",
+    "middle_east": "Ближний Восток"
   },
   "modals": {
     "search": {

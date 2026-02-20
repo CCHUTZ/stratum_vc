@@ -128,7 +128,15 @@
     "techReadiness": "Tech Readiness Index",
     "gccInvestments": "GCC Investments",
     "geoHubs": "Geopolitical Hubs",
-    "liveWebcams": "Live Webcams"
+    "liveWebcams": "Live Webcams",
+    "stratum_tier1": "Core Analysis Feeds",
+    "india": "India",
+    "mexico": "México",
+    "brazil": "Brasil",
+    "latam_regional": "LATAM Regional",
+    "europe": "Europe & Balkans",
+    "specialized": "Think Tanks & Analysis",
+    "middle_east": "Middle East"
   },
   "modals": {
     "search": {

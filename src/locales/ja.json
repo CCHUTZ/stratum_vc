@@ -151,7 +151,15 @@
     "techReadiness": "テック準備度指数",
     "gccInvestments": "GCC投資",
     "geoHubs": "地政学ハブ",
-    "liveWebcams": "ライブカメラ"
+    "liveWebcams": "ライブカメラ",
+    "stratum_tier1": "中核分析",
+    "india": "インド",
+    "mexico": "メキシコ",
+    "brazil": "ブラジル",
+    "latam_regional": "ラテンアメリカ地域",
+    "europe": "ヨーロッパとバルカン",
+    "specialized": "シンクタンク",
+    "middle_east": "中東"
   },
   "modals": {
     "search": {

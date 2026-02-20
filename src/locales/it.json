@@ -151,7 +151,15 @@
     "techHubs": "Hub tecnologici caldi",
     "gccInvestments": "Investimenti GCC",
     "geoHubs": "Hotspot geopolitici",
-    "liveWebcams": "Webcam in Diretta"
+    "liveWebcams": "Webcam in Diretta",
+    "stratum_tier1": "Analisi Principale",
+    "india": "India",
+    "mexico": "Messico",
+    "brazil": "Brasile",
+    "latam_regional": "LATAM Regionale",
+    "europe": "Europa e Balcani",
+    "specialized": "Think Tank",
+    "middle_east": "Medio Oriente"
   },
   "modals": {
     "search": {

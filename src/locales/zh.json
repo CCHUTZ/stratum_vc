@@ -151,7 +151,15 @@
     "techReadiness": "科技就绪指数",
     "gccInvestments": "GCC投资",
     "geoHubs": "地缘政治枢纽",
-    "liveWebcams": "实时摄像头"
+    "liveWebcams": "实时摄像头",
+    "stratum_tier1": "核心分析",
+    "india": "印度",
+    "mexico": "墨西哥",
+    "brazil": "巴西",
+    "latam_regional": "拉丁美洲地区",
+    "europe": "欧洲和巴尔干",
+    "specialized": "智库",
+    "middle_east": "中东"
   },
   "modals": {
     "search": {

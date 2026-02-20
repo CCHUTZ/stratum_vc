@@ -59,7 +59,15 @@
     "geoHubs": "Geopolitical Hotspots",
     "polymarket": "Previsões",
     "climate": "Anomalias Climáticas",
-    "liveWebcams": "Câmeras ao Vivo"
+    "liveWebcams": "Câmeras ao Vivo",
+    "stratum_tier1": "Análise Central",
+    "india": "Índia",
+    "mexico": "México",
+    "brazil": "Brasil",
+    "latam_regional": "LATAM Regional",
+    "europe": "Europa e Bálcãs",
+    "specialized": "Institutos de Pesquisa",
+    "middle_east": "Oriente Médio"
   },
   "modals": {
     "search": {

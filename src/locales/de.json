@@ -151,7 +151,15 @@
     "techHubs": "Heiße Tech-Hubs",
     "gccInvestments": "GCC-Investitionen",
     "geoHubs": "Geopolitical Hotspots",
-    "liveWebcams": "Live-Webcams"
+    "liveWebcams": "Live-Webcams",
+    "stratum_tier1": "Kernanalyse",
+    "india": "Indien",
+    "mexico": "Mexiko",
+    "brazil": "Brasilien",
+    "latam_regional": "LATAM Regional",
+    "europe": "Europa und Balkan",
+    "specialized": "Think Tanks",
+    "middle_east": "Naher Osten"
   },
   "modals": {
     "search": {

@@ -151,7 +151,15 @@
     "techHubs": "Centros tecnológicos de moda",
     "gccInvestments": "Inversiones del CCG",
     "geoHubs": "Geopolitical Hotspots",
-    "liveWebcams": "Cámaras en Vivo"
+    "liveWebcams": "Cámaras en Vivo",
+    "stratum_tier1": "Análisis Central",
+    "india": "India",
+    "mexico": "México",
+    "brazil": "Brasil",
+    "latam_regional": "LATAM Regional",
+    "europe": "Europa y Balkanes",
+    "specialized": "Tanques de Pensamiento",
+    "middle_east": "Oriente Medio"
   },
   "modals": {
     "search": {
