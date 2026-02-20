@@ -75,6 +75,7 @@ export class CountryBriefPage {
   private onExportImage?: (code: string, name: string) => void;
   private boundExportMenuClose: (() => void) | null = null;
   private boundCitationClick: ((e: Event) => void) | null = null;
+  private abortController: AbortController = new AbortController();
 
   constructor() {
     this.overlay = document.createElement('div');
@@ -114,13 +115,17 @@ export class CountryBriefPage {
 
   private levelBadge(level: string): string {
     const color = this.levelColor(level);
-    return `<span class="cb-badge" style="background:${color}20;color:${color};border:1px solid ${color}40">${level.toUpperCase()}</span>`;
+    const levelKey = level as 'critical' | 'high' | 'elevated' | 'moderate' | 'normal' | 'low';
+    const label = t(`countryBrief.levels.${levelKey}`);
+    return `<span class="cb-badge" style="background:${color}20;color:${color};border:1px solid ${color}40">${label.toUpperCase()}</span>`;
   }
 
   private trendIndicator(trend: string): string {
     const arrow = trend === 'rising' ? '↗' : trend === 'falling' ? '↘' : '→';
     const cls = trend === 'rising' ? 'trend-up' : trend === 'falling' ? 'trend-down' : 'trend-stable';
-    return `<span class="cb-trend ${cls}">${arrow} ${trend}</span>`;
+    const trendKey = trend as 'rising' | 'falling' | 'stable';
+    const trendLabel = t(`countryBrief.trends.${trendKey}`);
+    return `<span class="cb-trend ${cls}">${arrow} ${trendLabel}</span>`;
   }
 
   private scoreRing(score: number, level: string): string {
@@ -214,7 +219,13 @@ export class CountryBriefPage {
     this.overlay.classList.add('active');
   }
 
+  public get signal(): AbortSignal {
+    return this.abortController.signal;
+  }
+
   public show(country: string, code: string, score: CountryScore | null, signals: CountryBriefSignals): void {
+    this.abortController.abort();
+    this.abortController = new AbortController();
     this.currentCode = code;
     this.currentName = country;
     this.currentScore = score;
@@ -609,6 +620,7 @@ export class CountryBriefPage {
   }
 
   public hide(): void {
+    this.abortController.abort();
     this.overlay.classList.remove('active');
     this.currentCode = null;
     this.currentName = null;

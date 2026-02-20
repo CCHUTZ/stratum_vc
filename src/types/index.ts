@@ -2,11 +2,12 @@ export type PropagandaRisk = 'low' | 'medium' | 'high';
 
 export interface Feed {
   name: string;
-  url: string;
+  url: string | Record<string, string>;
   type?: string;
   region?: string;
   propagandaRisk?: PropagandaRisk;
   stateAffiliated?: string;  // e.g., "Russia", "China", "Iran"
+  lang?: string;             // ISO 2-letter code for filtering
 }
 
 export type { ThreatClassification, ThreatLevel, EventCategory } from '@/services/threat-classifier';
@@ -23,6 +24,7 @@ export interface NewsItem {
   lat?: number;
   lon?: number;
   locationName?: string;
+  lang?: string;
 }
 
 export type VelocityLevel = 'normal' | 'elevated' | 'spike';
@@ -53,6 +55,7 @@ export interface ClusteredEvent {
   threat?: import('@/services/threat-classifier').ThreatClassification;
   lat?: number;
   lon?: number;
+  lang?: string;
 }
 
 export type AssetType = 'pipeline' | 'cable' | 'datacenter' | 'base' | 'nuclear';
@@ -838,6 +841,54 @@ export interface MilitaryVessel {
   confidence: 'high' | 'medium' | 'low';
   isInteresting?: boolean;
   note?: string;
+  usniRegion?: string;
+  usniDeploymentStatus?: USNIDeploymentStatus;
+  usniStrikeGroup?: string;
+  usniActivityDescription?: string;
+  usniArticleUrl?: string;
+  usniArticleDate?: string;
+  usniSource?: boolean;
+}
+
+export type USNIDeploymentStatus = 'deployed' | 'underway' | 'in-port' | 'unknown';
+
+export interface USNIVesselEntry {
+  name: string;
+  hullNumber: string;
+  vesselType: MilitaryVesselType;
+  region: string;
+  regionLat: number;
+  regionLon: number;
+  deploymentStatus: USNIDeploymentStatus;
+  homePort?: string;
+  strikeGroup?: string;
+  activityDescription?: string;
+  usniArticleUrl: string;
+  usniArticleDate: string;
+}
+
+export interface USNIStrikeGroup {
+  name: string;
+  carrier?: string;
+  airWing?: string;
+  destroyerSquadron?: string;
+  escorts: string[];
+}
+
+export interface USNIFleetReport {
+  articleUrl: string;
+  articleDate: string;
+  articleTitle: string;
+  battleForceSummary?: {
+    totalShips: number;
+    deployed: number;
+    underway: number;
+  };
+  vessels: USNIVesselEntry[];
+  strikeGroups: USNIStrikeGroup[];
+  regions: string[];
+  parsingWarnings: string[];
+  timestamp: string;
 }
 
 export interface MilitaryVesselCluster {

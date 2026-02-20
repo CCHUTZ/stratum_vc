@@ -63,6 +63,11 @@ const ALLOWED_DOMAINS = [
   'www.brookings.edu',
   'layoffs.fyi',
   'www.defensenews.com',
+  'www.militarytimes.com',
+  'taskandpurpose.com',
+  'news.usni.org',
+  'www.oryxspioenkop.com',
+  'www.gov.uk',
   'www.foreignaffairs.com',
   'www.atlanticcouncil.org',
   // Tech variant domains
@@ -124,11 +129,21 @@ const ALLOWED_DOMAINS = [
   'english.alarabiya.net',
   'www.arabnews.com',
   'www.timesofisrael.com',
+  'www.haaretz.com',
   'www.scmp.com',
   'kyivindependent.com',
   'www.themoscowtimes.com',
   'feeds.24.com',
   'feeds.capi24.com',  // News24 redirect destination
+  // International News Sources
+  'www.france24.com',
+  'www.euronews.com',
+  'www.lemonde.fr',
+  'rss.dw.com',
+  'www.africanews.com',
+  'www.lasillavacia.com',
+  'www.channelnewsasia.com',
+  'www.thehindu.com',
   // International Organizations
   'news.un.org',
   'www.iaea.org',

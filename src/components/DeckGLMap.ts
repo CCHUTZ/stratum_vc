@@ -323,12 +323,12 @@ export class DeckGLMap {
     this.rebuildDatacenterSupercluster();
 
     this.debouncedRebuildLayers = debounce(() => {
-      if (this.renderPaused || this.webglLost) return;
-      this.maplibreMap?.resize();
+      if (this.renderPaused || this.webglLost || !this.maplibreMap) return;
+      this.maplibreMap.resize();
       this.deckOverlay?.setProps({ layers: this.buildLayers() });
     }, 150);
     this.rafUpdateLayers = rafSchedule(() => {
-      if (this.renderPaused || this.webglLost) return;
+      if (this.renderPaused || this.webglLost || !this.maplibreMap) return;
       this.deckOverlay?.setProps({ layers: this.buildLayers() });
     });
 
@@ -921,11 +921,15 @@ export class DeckGLMap {
     // Undersea cables layer
     if (mapLayers.cables) {
       layers.push(this.createCablesLayer());
+    } else {
+      this.layerCache.delete('cables-layer');
     }
 
     // Pipelines layer
     if (mapLayers.pipelines) {
       layers.push(this.createPipelinesLayer());
+    } else {
+      this.layerCache.delete('pipelines-layer');
     }
 
     // Conflict zones layer
@@ -1624,10 +1628,19 @@ export class DeckGLMap {
       data: vessels,
       getPosition: (d) => [d.lon, d.lat],
       getRadius: 6000,
-      getFillColor: COLORS.vesselMilitary,
+      getFillColor: (d) => {
+        if (d.usniSource) return [255, 160, 60, 160] as [number, number, number, number]; // Orange, lower alpha for USNI-only
+        return COLORS.vesselMilitary;
+      },
       radiusMinPixels: 4,
       radiusMaxPixels: 10,
       pickable: true,
+      stroked: true,
+      getLineColor: (d) => {
+        if (d.usniSource) return [255, 180, 80, 200] as [number, number, number, number]; // Orange outline
+        return [0, 0, 0, 0] as [number, number, number, number]; // No outline for AIS
+      },
+      lineWidthMinPixels: 2,
     });
   }
 
@@ -3058,7 +3071,7 @@ export class DeckGLMap {
   }
 
   private updateLayers(): void {
-    if (this.renderPaused || this.webglLost) return;
+    if (this.renderPaused || this.webglLost || !this.maplibreMap) return;
     const startTime = performance.now();
     if (this.deckOverlay) {
       this.deckOverlay.setProps({ layers: this.buildLayers() });
@@ -3845,7 +3858,9 @@ export class DeckGLMap {
     this.layerCache.clear();
 
     this.deckOverlay?.finalize();
+    this.deckOverlay = null;
     this.maplibreMap?.remove();
+    this.maplibreMap = null;
 
     this.container.innerHTML = '';
   }

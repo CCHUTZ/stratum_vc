@@ -39,9 +39,9 @@
       "conflictEvents": "conflits"
     },
     "timeAgo": {
-      "m": "il y a {{count}}m",
-      "h": "il y a {{count}}h",
-      "d": "il y a {{count}}j"
+      "m": "il y a {{count}} min",
+      "h": "il y a {{count}} h",
+      "d": "il y a {{count}} j"
     },
     "infra": {
       "pipeline": "Oléoducs",
@@ -50,6 +50,29 @@
       "base": "Bases militaires",
       "nuclear": "Installations nucléaires",
       "port": "Ports"
+    },
+    "levels": {
+      "critical": "Critique",
+      "high": "Élevé",
+      "elevated": "Accru",
+      "moderate": "Modéré",
+      "normal": "Normal",
+      "low": "Faible"
+    },
+    "trends": {
+      "rising": "En hausse",
+      "falling": "En baisse",
+      "stable": "Stable"
+    },
+    "fallback": {
+      "instabilityIndex": "**Indice d'instabilité : {{score}}/100** ({{level}}, {{trend}})",
+      "protestsDetected": "{{count}} manifestations actives détectées",
+      "aircraftTracked": "{{count}} aéronefs militaires suivis",
+      "vesselsTracked": "{{count}} navires militaires suivis",
+      "internetOutages": "{{count}} pannes Internet",
+      "recentEarthquakes": "{{count}} séismes récents",
+      "stockIndex": "Indice boursier : {{value}}",
+      "recentHeadlines": "**Derniers titres :**"
     }
   },
   "header": {
@@ -127,7 +150,8 @@
     "techReadiness": "Indice de maturité technologique",
     "techHubs": "Pôles Technologiques",
     "gccInvestments": "Investissements du CCG",
-    "geoHubs": "Centres géopolitiques"
+    "geoHubs": "Centres géopolitiques",
+    "liveWebcams": "Webcams en Direct"
   },
   "modals": {
     "search": {
@@ -231,6 +255,7 @@
       "macSilicon": "macOS (Apple Silicon)",
       "macIntel": "macOS (Intel)",
       "windows": "Windows (.exe)",
+      "linux": "Linux (.AppImage)",
       "dismiss": "Ignorer",
       "showAllPlatforms": "Afficher toutes les plateformes",
       "showLess": "Afficher moins"
@@ -267,7 +292,9 @@
         "OTX_API_KEY": "Source d'enrichissement optionnelle pour la couche cybermenaces.",
         "ABUSEIPDB_API_KEY": "Source d'enrichissement optionnelle pour la réputation IP malveillante.",
         "FINNHUB_API_KEY": "Cours des actions et données de marché en temps réel.",
-        "NASA_FIRMS_API_KEY": "Système d'information sur les incendies pour la gestion des ressources."
+        "NASA_FIRMS_API_KEY": "Système d'information sur les incendies pour la gestion des ressources.",
+        "OLLAMA_API_URL": "e.g. http://127.0.0.1:11434 (Ollama) or http://127.0.0.1:1234/v1 (LM Studio) — OpenAI-compatible endpoint.",
+        "OLLAMA_MODEL": "e.g. llama3.1:8b — model tag to use for summarization."
       }
     },
     "settingsWindow": {
@@ -346,9 +373,9 @@
       "fresh": "Récent",
       "noMarkets": "Aucun marché de prédiction trouvé",
       "timeAgo": {
-        "m": "il y a {{count}}m",
-        "h": "il y a {{count}}h",
-        "d": "il y a {{count}}j"
+        "m": "il y a {{count}} min",
+        "h": "il y a {{count}} h",
+        "d": "il y a {{count}} j"
       },
       "infra": {
         "pipeline": "Oléoducs",
@@ -357,6 +384,29 @@
         "base": "Bases militaires",
         "nuclear": "Installations nucléaires",
         "port": "Ports"
+      },
+      "levels": {
+        "critical": "Critique",
+        "high": "Élevé",
+        "elevated": "Accru",
+        "moderate": "Modéré",
+        "normal": "Normal",
+        "low": "Faible"
+      },
+      "trends": {
+        "rising": "En hausse",
+        "falling": "En baisse",
+        "stable": "Stable"
+      },
+      "fallback": {
+        "instabilityIndex": "**Indice d'instabilité : {{score}}/100** ({{level}}, {{trend}})",
+        "protestsDetected": "{{count}} manifestations actives détectées",
+        "aircraftTracked": "{{count}} aéronefs militaires suivis",
+        "vesselsTracked": "{{count}} navires militaires suivis",
+        "internetOutages": "{{count}} pannes Internet",
+        "recentEarthquakes": "{{count}} séismes récents",
+        "stockIndex": "Indice boursier : {{value}}",
+        "recentHeadlines": "**Derniers titres :**"
       }
     }
   },
@@ -369,6 +419,15 @@
       "showingMatches": "Affichage de {{count}} sur {{total}} correspondances",
       "match": "corresp.",
       "matches": "corresp."
+    },
+    "webcams": {
+      "regions": {
+        "all": "TOUS",
+        "mideast": "MOYEN-ORIENT",
+        "europe": "EUROPE",
+        "americas": "AMÉRIQUES",
+        "asia": "ASIE"
+      }
     },
     "regulation": {
       "timeline": "Chronologie",
@@ -386,7 +445,21 @@
       "learnMore": "En savoir plus",
       "active": "Actif",
       "proposed": "Proposée",
-      "updated": "Mis à jour"
+      "updated": "Mis à jour",
+      "dashboard": "AI Regulation Dashboard",
+      "actionsCount": "{{count}} actions",
+      "deadlinesCount": "{{count}} deadlines",
+      "days": "days",
+      "activeCount": "Active Regulations ({{count}})",
+      "proposedCount": "Proposed Regulations ({{count}})",
+      "moreProvisions": "+{{count}} more...",
+      "source": "Source",
+      "stances": {
+        "strict": "Strict",
+        "moderate": "Moderate",
+        "permissive": "Permissive",
+        "undefined": "Undefined"
+      }
     },
     "economic": {
       "indicators": "Indicateurs",
@@ -459,9 +532,9 @@
       "statusElevated": "ÉLEVÉ",
       "statusNominal": "NOMINAL",
       "statusQuiet": "CALME",
-      "justNow": "tout à l' heure",
-      "minutesAgo": "il y a {{m}} mois",
-      "hoursAgo": "Il y a {{h}}h",
+      "justNow": "tout à l'heure",
+      "minutesAgo": "il y a {{m}} min",
+      "hoursAgo": "il y a {{h}} h",
       "defconLabels": {
         "1": "PISTOLET ARMÉ - PRÉPARATION MAXIMALE",
         "2": "RYTHME RAPIDE - FORCES ARMÉES PRÊTES",
@@ -492,7 +565,46 @@
         "auxiliary": "Auxiliaires",
         "navalVessels": "Navires de guerre"
       },
-      "infoTooltip": "<strong>Méthodologie</strong><p>Regroupe les avions militaires et les navires de guerre par théâtre.</p><ul><li><strong>Normal :</strong> Activité de base</li><li><strong>Élevé :</strong> Au-dessus du seuil (50+ avions)</li><li><strong>Critique :</strong> Forte concentration (plus de 100 avions)</li></ul><p><strong>Capable de frappe :</strong> Tankers + AWACS + Chasseurs présents en nombre suffisant pour des opérations soutenues.</p>"
+      "infoTooltip": "<strong>Méthodologie</strong><p>Regroupe les avions militaires et les navires de guerre par théâtre.</p><ul><li><strong>Normal :</strong> Activité de base</li><li><strong>Élevé :</strong> Au-dessus du seuil (50+ avions)</li><li><strong>Critique :</strong> Forte concentration (plus de 100 avions)</li></ul><p><strong>Capable de frappe :</strong> Tankers + AWACS + Chasseurs présents en nombre suffisant pour des opérations soutenues.</p>",
+      "scanningTheaters": "Scan des théâtres",
+      "positions": "Positions des aéronefs",
+      "navalVesselsLoading": "Navires de guerre",
+      "theaterAnalysis": "Analyse des théâtres",
+      "connectingStreams": "Connexion aux flux ADS-B & AIS en direct...",
+      "initialLoadNote": "Le chargement initial prend 30 à 60 secondes le temps que les données de suivi s'accumulent",
+      "acquiringData": "Acquisition des données",
+      "acquiringDesc": "Connexion au réseau ADS-B pour les données de vols militaires. Cela peut prendre 30 à 60 secondes au premier chargement.",
+      "openSkyAdsb": "OpenSky ADS-B",
+      "aisVesselStream": "Flux AIS navires",
+      "retryNow": "Réessayer maintenant",
+      "feedRateLimited": "Flux limité",
+      "rateLimitedDesc": "L'API OpenSky a des limites de requêtes. Le panneau réessaiera automatiquement dans quelques minutes, ou vous pouvez réessayer maintenant.",
+      "rateLimitedTip": "Astuce : les heures de pointe (UTC 12:00-20:00) ont souvent des limites plus élevées.",
+      "tryAgain": "Réessayer",
+      "badges": {
+        "critical": "CRIT",
+        "elevated": "ÉLEV",
+        "normal": "NORM"
+      },
+      "trendStable": "stable",
+      "domains": {
+        "air": "AIR",
+        "sea": "MER"
+      },
+      "strike": "FRAPPE",
+      "staleWarning": "Données en cache utilisées — flux en direct temporairement indisponible",
+      "updated": "Mis à jour :",
+      "theaters": {
+        "iran-theater": "Théâtre iranien",
+        "taiwan-theater": "Détroit de Taïwan",
+        "baltic-theater": "Théâtre balte",
+        "blacksea-theater": "Mer Noire",
+        "korea-theater": "Péninsule coréenne",
+        "south-china-sea": "Mer de Chine méridionale",
+        "east-med-theater": "Méditerranée orientale",
+        "israel-gaza-theater": "Israël/Gaza",
+        "yemen-redsea-theater": "Yémen/Mer Rouge"
+      }
     },
     "countryBrief": {
       "shareStory": "Partager l'article",
@@ -692,7 +804,12 @@
     },
     "insights": {
       "noStories": "Aucune info de dernière minute pour l'instant",
-      "infoTooltip": "<strong>Analyse basée sur l'IA</strong><br>• <strong>World Brief</strong> : résumé de l'IA (Groq/OpenRouter)<br>• <strong>Sentiment</strong> : analyse du ton de l'actualité<br>• <strong>Velocity</strong> : histoires rapides<br>• <strong>Focal Points</strong> : corrèle les entités d'information avec les signaux cartographiques (militaires, manifestations, pannes)<br><em>ordinateur de bureau uniquement • Optimisé par Llama 3.3 + détection de point focal</em>"
+      "infoTooltip": "<strong>Analyse basée sur l'IA</strong><br>• <strong>World Brief</strong> : résumé de l'IA (Groq/OpenRouter)<br>• <strong>Sentiment</strong> : analyse du ton de l'actualité<br>• <strong>Velocity</strong> : histoires rapides<br>• <strong>Focal Points</strong> : corrèle les entités d'information avec les signaux cartographiques (militaires, manifestations, pannes)<br><em>ordinateur de bureau uniquement • Optimisé par Llama 3.3 + détection de point focal</em>",
+      "step": "Step {{step}}/{{total}}",
+      "waitingForData": "Waiting for news data...",
+      "rankingStories": "Ranking important stories...",
+      "analyzingSentiment": "Analyzing sentiment...",
+      "generatingBrief": "Generating world brief..."
     },
     "cascade": {
       "noImpacts": "Aucun impact pays détecté",
@@ -727,19 +844,72 @@
     },
     "strategicRisk": {
       "noRisks": "Aucun risque significatif détecté",
-      "infoTooltip": "<strong>Méthodologie</strong> Score composite (0-100) mélange :<ul><li>50 % d'instabilité du pays (5 premiers pondérés)</li><li>30 % Zones de convergence géographique</li><li>20 % Incidents d'infrastructure</li></ul>Actualisation automatique toutes les 5 minutes."
+      "infoTooltip": "<strong>Méthodologie</strong> Score composite (0-100) mélange :<ul><li>50 % d'instabilité du pays (5 premiers pondérés)</li><li>30 % Zones de convergence géographique</li><li>20 % Incidents d'infrastructure</li></ul>Actualisation automatique toutes les 5 minutes.",
+      "levels": {
+        "critical": "Critique",
+        "elevated": "Élevé",
+        "moderate": "Modéré",
+        "low": "Faible"
+      },
+      "trend": "Tendance",
+      "trends": {
+        "escalating": "En escalade",
+        "deEscalating": "En désescalade",
+        "stable": "Stable"
+      },
+      "insufficientData": "Insufficient Data",
+      "unableToAssess": "Unable to assess risk level.",
+      "enableDataSources": "Enable data sources to begin monitoring.",
+      "requiredDataSources": "Required Data Sources",
+      "optionalSources": "Optional Sources",
+      "enableCoreFeeds": "Enable Core Feeds",
+      "waitingForData": "Waiting for data...",
+      "refresh": "Refresh",
+      "learningMode": "Learning Mode - {{minutes}}m until reliable",
+      "noData": "no data",
+      "enable": "Enable",
+      "convergenceMetric": "Convergence",
+      "ciiDeviation": "CII Deviation",
+      "infraEvents": "Infra Events",
+      "highAlerts": "High Alerts",
+      "topRisks": "Top Risks",
+      "recentAlerts": "Recent Alerts ({{count}})",
+      "updated": "Updated: {{time}}",
+      "time": {
+        "justNow": "just now",
+        "minutesAgo": "{{count}}m ago",
+        "hoursAgo": "{{count}}h ago"
+      }
     },
     "techEvents": {
       "loading": "Chargement des événements tech...",
       "noEvents": "Aucun événement à afficher",
       "showOnMap": "Voir sur la carte",
-      "moreInfo": "Plus d'infos"
+      "moreInfo": "Plus d'infos",
+      "retry": "Retry",
+      "upcoming": "Upcoming",
+      "conferences": "Conferences",
+      "earnings": "Earnings",
+      "all": "All",
+      "conferencesCount": "{{count}} conferences",
+      "onMap": "{{count}} on map",
+      "techmemeEvents": "Techmeme Events ↗",
+      "today": "TODAY",
+      "soon": "SOON"
     },
     "techReadiness": {
       "internetUsers": "Utilisateurs Internet",
       "mobileSubscriptions": "Abonnements mobiles",
       "rdSpending": "Dépenses R&D",
-      "infoTooltip": "<strong>Global Tech Readiness</strong><br>Score composite (0-100) basé sur les données de la Banque mondiale :<br><br><strong>Metrics affichés :</strong><br>🌐 Utilisateurs Internet (% de la population)<br>📱 Abonnements mobiles (pour 100 personnes)<br>🔬 R&D Dépenses (% du PIB)<br><br><strong>Poids :</strong> R&D (35 %), Internet (30 %), Haut débit (20 %), Mobile (15 %)<br><br><em>— = Aucune donnée récente disponible</em><br><em>Source : Données ouvertes de la Banque mondiale (2019-2024)</em>"
+      "infoTooltip": "<strong>Global Tech Readiness</strong><br>Score composite (0-100) basé sur les données de la Banque mondiale :<br><br><strong>Metrics affichés :</strong><br>🌐 Utilisateurs Internet (% de la population)<br>📱 Abonnements mobiles (pour 100 personnes)<br>🔬 R&D Dépenses (% du PIB)<br><br><strong>Poids :</strong> R&D (35 %), Internet (30 %), Haut débit (20 %), Mobile (15 %)<br><br><em>— = Aucune donnée récente disponible</em><br><em>Source : Données ouvertes de la Banque mondiale (2019-2024)</em>",
+      "fetchingData": "Fetching World Bank Data",
+      "internetUsersIndicator": "Internet Users",
+      "mobileSubscriptionsIndicator": "Mobile Subscriptions",
+      "broadbandAccess": "Broadband Access",
+      "rdExpenditure": "R&D Expenditure",
+      "analyzingCountries": "Analyzing 200+ countries...",
+      "source": "Source: World Bank",
+      "updated": "Updated: {{date}}"
     },
     "populationExposure": {
       "noData": "Aucune donnée d'exposition disponible",
@@ -756,9 +926,9 @@
       "total": "Total",
       "never": "jamais",
       "time": {
-        "justNow": "tout à l' heure",
-        "minutesAgo": "il y a {{count}} m",
-        "hoursAgo": "Il y a {{count}}h"
+        "justNow": "tout à l'heure",
+        "minutesAgo": "il y a {{count}} min",
+        "hoursAgo": "il y a {{count}} h"
       },
       "infoTooltip": "Détections thermiques par satellite FIRMS VIIRS de la NASA dans les régions de conflit surveillées. Haute intensité = luminosité >360K et confiance >80 %."
     },
@@ -816,6 +986,39 @@
     "export": {
       "exportData": "Exporter les données"
     },
+    "etfFlows": {
+      "unavailable": "Données ETF temporairement indisponibles",
+      "netFlow": "Flux net",
+      "estFlow": "Flux est.",
+      "totalVol": "Vol. total",
+      "etfs": "ETFs",
+      "netInflow": "FLUX NET ENTRANT",
+      "netOutflow": "FLUX NET SORTANT",
+      "table": {
+        "ticker": "Ticker",
+        "issuer": "Émetteur",
+        "estFlow": "Flux est.",
+        "volume": "Volume",
+        "change": "Variation"
+      }
+    },
+    "macroSignals": {
+      "overall": "Global",
+      "verdict": {
+        "buy": "ACHAT",
+        "cash": "CASH"
+      },
+      "bullish": "{{count}}/{{total}} haussier",
+      "signals": {
+        "liquidity": "Liquidité",
+        "flow": "Flux",
+        "regime": "Régime",
+        "btcTrend": "Tendance BTC",
+        "hashRate": "Hash Rate",
+        "mining": "Minage",
+        "fearGreed": "Peur &amp; Avidité"
+      }
+    },
     "runtimeConfig": {
       "getApiKey": "Obtenir une clé API"
     },
@@ -847,11 +1050,12 @@
         "review": "Examen pour la connaissance de la situation"
       },
       "time": {
-        "justNow": "tout à l' heure",
-        "minutesAgo": "il y a {{count}} m",
-        "hoursAgo": "Il y a {{count}}h",
-        "daysAgo": "Il y a {{count}}j"
-      }
+        "justNow": "tout à l'heure",
+        "minutesAgo": "il y a {{count}} min",
+        "hoursAgo": "il y a {{count}} h",
+        "daysAgo": "il y a {{count}} j"
+      },
+      "hideFindings": "Hide Intelligence Findings"
     },
     "countryTimeline": {
       "now": "maintenant",
@@ -861,10 +1065,102 @@
       "infoTooltip": "<strong>GDELT Intelligence</strong> Surveillance de l'actualité mondiale en temps réel :<ul><li>Catégories de sujets sélectionnés (conflits, cyber, etc.)</li><li>Articles traduits dans plus de 100 langues</li><li>Mises à jour toutes les 15 minutes</li></ul>Source : Projet GDELT (gdeltproject.org)"
     },
     "investments": {
-      "infoTooltip": "Base de données des investissements directs étrangers de l'Arabie saoudite et des Émirats arabes unis dans les infrastructures critiques mondiales. Cliquez sur une ligne pour accéder à l'investissement sur la carte."
+      "infoTooltip": "Base de données des investissements directs étrangers de l'Arabie saoudite et des Émirats arabes unis dans les infrastructures critiques mondiales. Cliquez sur une ligne pour accéder à l'investissement sur la carte.",
+      "searchPlaceholder": "Search assets, countries, entities…",
+      "allCountries": "All Countries",
+      "saudiArabia": "Saudi Arabia",
+      "uae": "UAE",
+      "allSectors": "All Sectors",
+      "allEntities": "All Entities",
+      "allStatuses": "All Statuses",
+      "operational": "Operational",
+      "underConstruction": "Under Construction",
+      "announced": "Announced",
+      "rumoured": "Rumoured",
+      "divested": "Divested",
+      "asset": "Asset",
+      "country": "Country",
+      "sector": "Sector",
+      "status": "Status",
+      "investment": "Investment",
+      "year": "Year",
+      "noMatch": "No investments match filters",
+      "undisclosed": "Undisclosed",
+      "sectors": {
+        "ports": "Ports",
+        "pipelines": "Pipelines",
+        "energy": "Energy",
+        "datacenters": "Data Centers",
+        "airports": "Airports",
+        "railways": "Railways",
+        "telecoms": "Telecoms",
+        "water": "Water",
+        "logistics": "Logistics",
+        "mining": "Mining",
+        "realEstate": "Real Estate",
+        "manufacturing": "Manufacturing"
+      }
     },
     "prediction": {
       "infoTooltip": "<strong>Marchés de prévision</strong> Marchés de prévision en argent réel :<ul><li>Les prix reflètent les estimations de probabilité de foule</li><li>Volume plus élevé = signal plus fiable</li><li>Orientation géopolitique et événements actuels</li></ul>Source : Polymarket (polymarket.com)"
+    },
+    "panel": {
+      "showMethodologyInfo": "Show methodology info",
+      "dragToResize": "Drag to resize (double-click to reset)",
+      "openSettings": "Open Settings"
+    },
+    "languageSelector": {
+      "selectLanguage": "Select Language"
+    },
+    "serviceStatus": {
+      "checkingServices": "Checking services...",
+      "allOperational": "All services operational",
+      "ok": "OK",
+      "degraded": "Degraded",
+      "outage": "Outage",
+      "backendUnavailable": "Desktop local backend unavailable. Falling back to cloud API.",
+      "desktopReadiness": "Desktop readiness",
+      "acceptanceChecks": "Acceptance checks: {{ready}}/{{total}} ready · key-backed features {{available}}/{{featureTotal}}",
+      "nonParityFallbacks": "Non-parity fallbacks ({{count}})",
+      "categories": {
+        "all": "All",
+        "cloud": "Cloud",
+        "dev": "Dev Tools",
+        "comm": "Comms",
+        "ai": "AI",
+        "saas": "SaaS"
+      }
+    },
+    "verification": {
+      "title": "Information Verification Checklist",
+      "hint": "Based on Bellingcat's OSH Framework",
+      "verdicts": {
+        "verified": "VERIFIED",
+        "likely": "LIKELY AUTHENTIC",
+        "uncertain": "UNCERTAIN",
+        "unreliable": "UNRELIABLE"
+      },
+      "notesTitle": "Verification Notes",
+      "noNotes": "No notes added",
+      "addNotePlaceholder": "Add verification note...",
+      "add": "Add",
+      "resetChecklist": "Reset Checklist",
+      "checks": {
+        "recency": "Recent timestamp confirmed",
+        "geolocation": "Location verified",
+        "source": "Primary source identified",
+        "crossref": "Cross-referenced with other sources",
+        "noAi": "No AI generation artifacts",
+        "noRecrop": "Not recycled/old footage",
+        "metadata": "Metadata verified",
+        "context": "Context established"
+      }
+    },
+    "liveNews": {
+      "retry": "Retry",
+      "notLive": "{{name}} is not currently live",
+      "cannotEmbed": "{{name}} cannot be embedded in this app (YouTube {{code}})",
+      "openOnYouTube": "Open on YouTube"
     }
   },
   "popups": {
@@ -1085,10 +1381,10 @@
     "viewUSGS": "Voir sur USGS",
     "expired": "Expiré",
     "timeAgo": {
-      "s": "il y a {{count}}s",
-      "m": "il y a {{count}}m",
-      "h": "il y a {{count}}h",
-      "d": "il y a {{count}}j"
+      "s": "il y a {{count}} s",
+      "m": "il y a {{count}} min",
+      "h": "il y a {{count}} h",
+      "d": "il y a {{count}} j"
     },
     "updated": "Mis à jour",
     "cableAdvisory": {
@@ -1212,6 +1508,12 @@
       "heading": "TITRE",
       "mmsi": "MMSI",
       "hull": "COQUE #",
+      "region": "REGION",
+      "strikeGroup": "STRIKE GROUP",
+      "deploymentStatus": "STATUS",
+      "usniIntel": "USNI Intel",
+      "usniSource": "Source: USNI News Fleet Tracker",
+      "approximatePosition": "Position approximate — based on USNI weekly report, not real-time AIS.",
       "darkDescription": "⚠ Le navire est devenu sombre - signal AIS perdu. Peut indiquer des opérations sensibles."
     },
     "militaryCluster": {
@@ -1489,6 +1791,8 @@
     "cached": "EN CACHE",
     "unavailable": "INDISPONIBLE",
     "close": "Fermer",
-    "currentVariant": "(actuel)"
+    "currentVariant": "(actuel)",
+    "retry": "Retry",
+    "refresh": "Refresh"
   }
 }

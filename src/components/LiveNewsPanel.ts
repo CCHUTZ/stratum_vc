@@ -185,10 +185,11 @@ export class LiveNewsPanel extends Panel {
     // Track user activity to detect idle (pauses after 5 min inactivity)
     this.boundIdleResetHandler = () => {
       if (this.idleTimeout) clearTimeout(this.idleTimeout);
+      this.resumeFromIdle();
       this.idleTimeout = setTimeout(() => this.pauseForIdle(), this.IDLE_PAUSE_MS);
     };
 
-    ['mousedown', 'keydown', 'scroll', 'touchstart'].forEach(event => {
+    ['mousedown', 'keydown', 'scroll', 'touchstart', 'mousemove'].forEach(event => {
       document.addEventListener(event, this.boundIdleResetHandler, { passive: true });
     });
 
@@ -265,7 +266,12 @@ export class LiveNewsPanel extends Panel {
     this.isPlaying = !this.isPlaying;
     this.wasPlayingBeforeIdle = this.isPlaying;
     this.updateLiveIndicator();
-    this.syncPlayerState();
+    if (this.isPlaying && !this.player && !this.desktopEmbedIframe) {
+      this.ensurePlayerContainer();
+      void this.initializePlayer();
+    } else {
+      this.syncPlayerState();
+    }
   }
 
   private createMuteButton(): void {
@@ -365,8 +371,8 @@ export class LiveNewsPanel extends Panel {
     this.content.innerHTML = `
       <div class="live-offline">
         <div class="offline-icon">📺</div>
-        <div class="offline-text">${channel.name} is not currently live</div>
-        <button class="offline-retry" onclick="this.closest('.panel').querySelector('.live-channel-btn.active')?.click()">Retry</button>
+        <div class="offline-text">${t('components.liveNews.notLive', { name: channel.name })}</div>
+        <button class="offline-retry" onclick="this.closest('.panel').querySelector('.live-channel-btn.active')?.click()">${t('common.retry')}</button>
       </div>
     `;
   }
@@ -379,8 +385,8 @@ export class LiveNewsPanel extends Panel {
     this.content.innerHTML = `
       <div class="live-offline">
         <div class="offline-icon">!</div>
-        <div class="offline-text">${channel.name} cannot be embedded in this app (YouTube ${errorCode})</div>
-        <a class="offline-retry" href="${watchUrl}" target="_blank" rel="noopener noreferrer">Open on YouTube</a>
+        <div class="offline-text">${t('components.liveNews.cannotEmbed', { name: channel.name, code: String(errorCode) })}</div>
+        <a class="offline-retry" href="${watchUrl}" target="_blank" rel="noopener noreferrer">${t('components.liveNews.openOnYouTube')}</a>
       </div>
     `;
   }
@@ -644,9 +650,9 @@ export class LiveNewsPanel extends Panel {
     }
 
     if (this.isMuted) {
-      this.player.mute();
+      this.player.mute?.();
     } else {
-      this.player.unMute();
+      this.player.unMute?.();
     }
 
     if (this.isPlaying) {
@@ -656,19 +662,19 @@ export class LiveNewsPanel extends Panel {
         this.player.pauseVideo();
         setTimeout(() => {
           if (this.player && this.isPlaying) {
-            this.player.mute();
-            this.player.playVideo();
+            this.player.mute?.();
+            this.player.playVideo?.();
             // Restore mute state after play starts
             if (!this.isMuted) {
-              setTimeout(() => { if (this.player) this.player.unMute(); }, 500);
+              setTimeout(() => { this.player?.unMute?.(); }, 500);
             }
           }
         }, 800);
       } else {
-        this.player.playVideo();
+        this.player.playVideo?.();
       }
     } else {
-      this.player.pauseVideo();
+      this.player.pauseVideo?.();
     }
   }
 
@@ -684,7 +690,7 @@ export class LiveNewsPanel extends Panel {
 
     document.removeEventListener('visibilitychange', this.boundVisibilityHandler);
     window.removeEventListener('message', this.boundMessageHandler);
-    ['mousedown', 'keydown', 'scroll', 'touchstart'].forEach(event => {
+    ['mousedown', 'keydown', 'scroll', 'touchstart', 'mousemove'].forEach(event => {
       document.removeEventListener(event, this.boundIdleResetHandler);
     });
 

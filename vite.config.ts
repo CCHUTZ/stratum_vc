@@ -1,9 +1,41 @@
 import { defineConfig, type Plugin } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
-import { resolve } from 'path';
+import { resolve, dirname, extname } from 'path';
+import { mkdir, readFile, writeFile } from 'fs/promises';
+import { brotliCompress } from 'zlib';
+import { promisify } from 'util';
 import pkg from './package.json';
 
 const isE2E = process.env.VITE_E2E === '1';
+
+
+const brotliCompressAsync = promisify(brotliCompress);
+const BROTLI_EXTENSIONS = new Set(['.js', '.mjs', '.css', '.html', '.svg', '.json', '.txt', '.xml', '.wasm']);
+
+function brotliPrecompressPlugin(): Plugin {
+  return {
+    name: 'brotli-precompress',
+    apply: 'build',
+    async writeBundle(outputOptions, bundle) {
+      const outDir = outputOptions.dir;
+      if (!outDir) return;
+
+      await Promise.all(Object.keys(bundle).map(async (fileName) => {
+        const extension = extname(fileName).toLowerCase();
+        if (!BROTLI_EXTENSIONS.has(extension)) return;
+
+        const sourcePath = resolve(outDir, fileName);
+        const compressedPath = `${sourcePath}.br`;
+        const sourceBuffer = await readFile(sourcePath);
+        if (sourceBuffer.length < 1024) return;
+
+        const compressedBuffer = await brotliCompressAsync(sourceBuffer);
+        await mkdir(dirname(compressedPath), { recursive: true });
+        await writeFile(compressedPath, compressedBuffer);
+      }));
+    },
+  };
+}
 
 const VARIANT_META: Record<string, {
   title: string;
@@ -147,6 +179,53 @@ function htmlVariantPlugin(): Plugin {
   };
 }
 
+function polymarketPlugin(): Plugin {
+  const GAMMA_BASE = 'https://gamma-api.polymarket.com';
+  const ALLOWED_ORDER = ['volume', 'liquidity', 'startDate', 'endDate', 'spread'];
+
+  return {
+    name: 'polymarket-dev',
+    configureServer(server) {
+      server.middlewares.use(async (req, res, next) => {
+        if (!req.url?.startsWith('/api/polymarket')) return next();
+
+        const url = new URL(req.url, 'http://localhost');
+        const endpoint = url.searchParams.get('endpoint') || 'markets';
+        const closed = ['true', 'false'].includes(url.searchParams.get('closed') ?? '') ? url.searchParams.get('closed') : 'false';
+        const order = ALLOWED_ORDER.includes(url.searchParams.get('order') ?? '') ? url.searchParams.get('order') : 'volume';
+        const ascending = ['true', 'false'].includes(url.searchParams.get('ascending') ?? '') ? url.searchParams.get('ascending') : 'false';
+        const rawLimit = parseInt(url.searchParams.get('limit') ?? '', 10);
+        const limit = isNaN(rawLimit) ? 50 : Math.max(1, Math.min(100, rawLimit));
+
+        const params = new URLSearchParams({ closed: closed!, order: order!, ascending: ascending!, limit: String(limit) });
+        if (endpoint === 'events') {
+          const tag = (url.searchParams.get('tag') ?? '').replace(/[^a-z0-9-]/gi, '').slice(0, 100);
+          if (tag) params.set('tag_slug', tag);
+        }
+
+        const gammaUrl = `${GAMMA_BASE}/${endpoint === 'events' ? 'events' : 'markets'}?${params}`;
+
+        res.setHeader('Content-Type', 'application/json');
+        try {
+          const controller = new AbortController();
+          const timer = setTimeout(() => controller.abort(), 8000);
+          const resp = await fetch(gammaUrl, { headers: { Accept: 'application/json' }, signal: controller.signal });
+          clearTimeout(timer);
+          if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+          const data = await resp.text();
+          res.setHeader('Cache-Control', 'public, max-age=120');
+          res.setHeader('X-Polymarket-Source', 'gamma');
+          res.end(data);
+        } catch {
+          // Expected: Cloudflare JA3 blocks server-side TLS — return empty array
+          res.setHeader('Cache-Control', 'public, max-age=300');
+          res.end('[]');
+        }
+      });
+    },
+  };
+}
+
 function youtubeLivePlugin(): Plugin {
   return {
     name: 'youtube-live',
@@ -167,11 +246,41 @@ function youtubeLivePlugin(): Plugin {
         }
 
         try {
-          // Use YouTube's oEmbed to check if a video is valid/live
-          // For now, return null to use fallback - will implement proper detection later
+          const channelHandle = channel.startsWith('@') ? channel : `@${channel}`;
+          const liveUrl = `https://www.youtube.com/${channelHandle}/live`;
+
+          const ytRes = await fetch(liveUrl, {
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            },
+            redirect: 'follow',
+          });
+
+          if (!ytRes.ok) {
+            res.setHeader('Content-Type', 'application/json');
+            res.setHeader('Cache-Control', 'public, max-age=300');
+            res.end(JSON.stringify({ videoId: null, channel }));
+            return;
+          }
+
+          const html = await ytRes.text();
+
+          // Scope both fields to the same videoDetails block so we don't
+          // combine a videoId from one object with isLive from another.
+          let videoId: string | null = null;
+          const detailsIdx = html.indexOf('"videoDetails"');
+          if (detailsIdx !== -1) {
+            const block = html.substring(detailsIdx, detailsIdx + 5000);
+            const vidMatch = block.match(/"videoId":"([a-zA-Z0-9_-]{11})"/);
+            const liveMatch = block.match(/"isLive"\s*:\s*true/);
+            if (vidMatch && liveMatch) {
+              videoId = vidMatch[1];
+            }
+          }
+
           res.setHeader('Content-Type', 'application/json');
           res.setHeader('Cache-Control', 'public, max-age=300');
-          res.end(JSON.stringify({ videoId: null, channel }));
+          res.end(JSON.stringify({ videoId, isLive: videoId !== null, channel }));
         } catch (error) {
           console.error(`[YouTube Live] Error:`, error);
           res.statusCode = 500;
@@ -189,7 +298,9 @@ export default defineConfig({
   },
   plugins: [
     htmlVariantPlugin(),
+    polymarketPlugin(),
     youtubeLivePlugin(),
+    brotliPrecompressPlugin(),
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: false,
@@ -220,9 +331,8 @@ export default defineConfig({
 
       workbox: {
         globPatterns: ['**/*.{js,css,ico,png,svg,woff2}'],
-        globIgnores: ['**/ml-*.js', '**/onnx*.wasm'],
-        navigateFallback: '/index.html',
-        navigateFallbackDenylist: [/^\/api\//, /^\/settings/],
+        globIgnores: ['**/ml*.js', '**/onnx*.wasm', '**/locale-*.js'],
+        navigateFallback: null,
         skipWaiting: true,
         clientsClaim: true,
         cleanupOutdatedCaches: true,
@@ -280,6 +390,15 @@ export default defineConfig({
             },
           },
           {
+            urlPattern: /\/assets\/locale-.*\.js$/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'locale-files',
+              expiration: { maxEntries: 20, maxAgeSeconds: 30 * 24 * 60 * 60 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
             urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp)$/i,
             handler: 'StaleWhileRevalidate',
             options: {
@@ -321,6 +440,22 @@ export default defineConfig({
             if (id.includes('/topojson-client/')) {
               return 'topojson';
             }
+            if (id.includes('/i18next')) {
+              return 'i18n';
+            }
+            if (id.includes('/@sentry/')) {
+              return 'sentry';
+            }
+          }
+          if (id.includes('/src/components/') && id.endsWith('Panel.ts')) {
+            return 'panels';
+          }
+          // Give lazy-loaded locale chunks a recognizable prefix so the
+          // service worker can exclude them from precache (en.json is
+          // statically imported into the main bundle).
+          const localeMatch = id.match(/\/locales\/(\w+)\.json$/);
+          if (localeMatch && localeMatch[1] !== 'en') {
+            return `locale-${localeMatch[1]}`;
           }
           return undefined;
         },
@@ -365,17 +500,7 @@ export default defineConfig({
           return `/api/v3/simple/price${qs}`;
         },
       },
-      // Polymarket API — proxy through production Vercel edge function
-      // Direct gamma-api.polymarket.com is blocked by Cloudflare JA3 fingerprinting
-      '/api/polymarket': {
-        target: 'https://worldmonitor.app',
-        changeOrigin: true,
-        configure: (proxy) => {
-          proxy.on('error', (err) => {
-            console.log('Polymarket proxy error:', err.message);
-          });
-        },
-      },
+      // Polymarket handled by polymarketPlugin() — no prod proxy needed
       // USGS Earthquake API
       '/api/earthquake': {
         target: 'https://earthquake.usgs.gov',

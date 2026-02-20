@@ -129,6 +129,11 @@ export class MapPopup {
   private onClose?: () => void;
   private cableAdvisories: CableAdvisory[] = [];
   private repairShips: RepairShip[] = [];
+  private isMobileSheet = false;
+  private sheetTouchStartY: number | null = null;
+  private sheetCurrentOffset = 0;
+  private readonly mobileDismissThreshold = 96;
+  private outsideListenerTimeoutId: number | null = null;
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -137,73 +142,24 @@ export class MapPopup {
   public show(data: PopupData): void {
     this.hide();
 
+    this.isMobileSheet = isMobileDevice();
     this.popup = document.createElement('div');
-    this.popup.className = 'map-popup';
+    this.popup.className = this.isMobileSheet ? 'map-popup map-popup-sheet' : 'map-popup';
 
     const content = this.renderContent(data);
-    this.popup.innerHTML = content;
+    this.popup.innerHTML = this.isMobileSheet
+      ? `<button class="map-popup-sheet-handle" aria-label="${t('common.close')}"></button>${content}`
+      : content;
 
     // Get container's viewport position for absolute positioning
     const containerRect = this.container.getBoundingClientRect();
 
-    if (isMobileDevice()) {
-      // On mobile, center the popup horizontally and position in upper area
-      this.popup.style.left = '50%';
-      this.popup.style.transform = 'translateX(-50%)';
-      this.popup.style.top = `${Math.max(60, Math.min(containerRect.top + data.y, window.innerHeight * 0.4))}px`;
-    } else {
-      // Desktop: position near click with smart bounds checking
+    if (this.isMobileSheet) {
+      this.popup.style.left = '';
+      this.popup.style.top = '';
       this.popup.style.transform = '';
-      const popupWidth = 380;
-      const bottomBuffer = 50; // Buffer from viewport bottom
-      const topBuffer = 60; // Header height
-
-      // Temporarily append popup off-screen to measure actual height
-      this.popup.style.visibility = 'hidden';
-      this.popup.style.top = '0';
-      this.popup.style.left = '-9999px';
-      document.body.appendChild(this.popup);
-      const popupHeight = this.popup.offsetHeight;
-      document.body.removeChild(this.popup);
-      this.popup.style.visibility = '';
-
-      // Convert container-relative coords to viewport coords
-      const viewportX = containerRect.left + data.x;
-      const viewportY = containerRect.top + data.y;
-
-      // Horizontal positioning (viewport-relative)
-      const maxX = window.innerWidth - popupWidth - 20;
-      let left = viewportX + 20;
-      if (left > maxX) {
-        // Position to the left of click if it would overflow right
-        left = Math.max(10, viewportX - popupWidth - 20);
-      }
-
-      // Vertical positioning - prefer below click, but flip above if needed
-      const availableBelow = window.innerHeight - viewportY - bottomBuffer;
-      const availableAbove = viewportY - topBuffer;
-
-      let top: number;
-      if (availableBelow >= popupHeight) {
-        // Enough space below - position below click
-        top = viewportY + 10;
-      } else if (availableAbove >= popupHeight) {
-        // Not enough below, but enough above - position above click
-        top = viewportY - popupHeight - 10;
-      } else {
-        // Limited space both ways - position at top buffer
-        top = topBuffer;
-      }
-
-      // CRITICAL: Ensure popup stays within viewport vertically
-      top = Math.max(topBuffer, top);
-      const maxTop = window.innerHeight - popupHeight - bottomBuffer;
-      if (maxTop > topBuffer) {
-        top = Math.min(top, maxTop);
-      }
-
-      this.popup.style.left = `${left}px`;
-      this.popup.style.top = `${top}px`;
+    } else {
+      this.positionDesktopPopup(data, containerRect);
     }
 
     // Append to body to avoid container overflow clipping
@@ -211,24 +167,167 @@ export class MapPopup {
 
     // Close button handler
     this.popup.querySelector('.popup-close')?.addEventListener('click', () => this.hide());
+    this.popup.querySelector('.map-popup-sheet-handle')?.addEventListener('click', () => this.hide());
+
+    if (this.isMobileSheet) {
+      this.popup.addEventListener('touchstart', this.handleSheetTouchStart, { passive: true });
+      this.popup.addEventListener('touchmove', this.handleSheetTouchMove, { passive: false });
+      this.popup.addEventListener('touchend', this.handleSheetTouchEnd);
+      this.popup.addEventListener('touchcancel', this.handleSheetTouchEnd);
+      requestAnimationFrame(() => {
+        if (!this.popup) return;
+        this.popup.classList.add('open');
+        // Remove will-change after slide-in transition to free GPU memory
+        this.popup.addEventListener('transitionend', () => {
+          if (this.popup) this.popup.style.willChange = 'auto';
+        }, { once: true });
+      });
+    }
 
     // Click outside to close
-    setTimeout(() => {
+    if (this.outsideListenerTimeoutId !== null) {
+      window.clearTimeout(this.outsideListenerTimeoutId);
+    }
+    this.outsideListenerTimeoutId = window.setTimeout(() => {
       document.addEventListener('click', this.handleOutsideClick);
-    }, 100);
+      document.addEventListener('touchstart', this.handleOutsideClick);
+      document.addEventListener('keydown', this.handleEscapeKey);
+      this.outsideListenerTimeoutId = null;
+    }, 0);
   }
 
-  private handleOutsideClick = (e: MouseEvent) => {
+  private positionDesktopPopup(data: PopupData, containerRect: DOMRect): void {
+    if (!this.popup) return;
+
+    const popupWidth = 380;
+    const bottomBuffer = 50; // Buffer from viewport bottom
+    const topBuffer = 60; // Header height
+
+    // Temporarily append popup off-screen to measure actual height
+    this.popup.style.visibility = 'hidden';
+    this.popup.style.top = '0';
+    this.popup.style.left = '-9999px';
+    document.body.appendChild(this.popup);
+    const popupHeight = this.popup.offsetHeight;
+    document.body.removeChild(this.popup);
+    this.popup.style.visibility = '';
+
+    // Convert container-relative coords to viewport coords
+    const viewportX = containerRect.left + data.x;
+    const viewportY = containerRect.top + data.y;
+
+    // Horizontal positioning (viewport-relative)
+    const maxX = window.innerWidth - popupWidth - 20;
+    let left = viewportX + 20;
+    if (left > maxX) {
+      // Position to the left of click if it would overflow right
+      left = Math.max(10, viewportX - popupWidth - 20);
+    }
+
+    // Vertical positioning - prefer below click, but flip above if needed
+    const availableBelow = window.innerHeight - viewportY - bottomBuffer;
+    const availableAbove = viewportY - topBuffer;
+
+    let top: number;
+    if (availableBelow >= popupHeight) {
+      // Enough space below - position below click
+      top = viewportY + 10;
+    } else if (availableAbove >= popupHeight) {
+      // Not enough below, but enough above - position above click
+      top = viewportY - popupHeight - 10;
+    } else {
+      // Limited space both ways - position at top buffer
+      top = topBuffer;
+    }
+
+    // CRITICAL: Ensure popup stays within viewport vertically
+    top = Math.max(topBuffer, top);
+    const maxTop = window.innerHeight - popupHeight - bottomBuffer;
+    if (maxTop > topBuffer) {
+      top = Math.min(top, maxTop);
+    }
+
+    this.popup.style.left = `${left}px`;
+    this.popup.style.top = `${top}px`;
+  }
+
+  private handleOutsideClick = (e: Event) => {
     if (this.popup && !this.popup.contains(e.target as Node)) {
       this.hide();
     }
   };
 
+  private handleEscapeKey = (e: KeyboardEvent): void => {
+    if (e.key === 'Escape') {
+      this.hide();
+    }
+  };
+
+  private handleSheetTouchStart = (e: TouchEvent): void => {
+    if (!this.popup || !this.isMobileSheet || e.touches.length !== 1) return;
+
+    const target = e.target as HTMLElement | null;
+    const popupBody = this.popup.querySelector('.popup-body');
+    if (target?.closest('.popup-body') && popupBody && popupBody.scrollTop > 0) {
+      this.sheetTouchStartY = null;
+      return;
+    }
+
+    this.sheetTouchStartY = e.touches[0]?.clientY ?? null;
+    this.sheetCurrentOffset = 0;
+    this.popup.classList.add('dragging');
+  };
+
+  private handleSheetTouchMove = (e: TouchEvent): void => {
+    if (!this.popup || !this.isMobileSheet || this.sheetTouchStartY === null) return;
+
+    const currentY = e.touches[0]?.clientY;
+    if (currentY == null) return;
+
+    const delta = Math.max(0, currentY - this.sheetTouchStartY);
+    if (delta <= 0) return;
+
+    this.sheetCurrentOffset = delta;
+    this.popup.style.transform = `translate3d(0, ${delta}px, 0)`;
+    e.preventDefault();
+  };
+
+  private handleSheetTouchEnd = (): void => {
+    if (!this.popup || !this.isMobileSheet || this.sheetTouchStartY === null) return;
+
+    const shouldDismiss = this.sheetCurrentOffset >= this.mobileDismissThreshold;
+    this.popup.classList.remove('dragging');
+    this.sheetTouchStartY = null;
+
+    if (shouldDismiss) {
+      this.hide();
+      return;
+    }
+
+    this.sheetCurrentOffset = 0;
+    this.popup.style.transform = '';
+    this.popup.classList.add('open');
+  };
+
   public hide(): void {
+    if (this.outsideListenerTimeoutId !== null) {
+      window.clearTimeout(this.outsideListenerTimeoutId);
+      this.outsideListenerTimeoutId = null;
+    }
+
     if (this.popup) {
+      this.popup.removeEventListener('touchstart', this.handleSheetTouchStart);
+      this.popup.removeEventListener('touchmove', this.handleSheetTouchMove);
+      this.popup.removeEventListener('touchend', this.handleSheetTouchEnd);
+      this.popup.removeEventListener('touchcancel', this.handleSheetTouchEnd);
       this.popup.remove();
       this.popup = null;
+      this.isMobileSheet = false;
+      this.sheetTouchStartY = null;
+      this.sheetCurrentOffset = 0;
       document.removeEventListener('click', this.handleOutsideClick);
+      document.removeEventListener('touchstart', this.handleOutsideClick);
+      document.removeEventListener('keydown', this.handleEscapeKey);
       this.onClose?.();
     }
   }
@@ -1921,6 +2020,11 @@ export class MapPopup {
       ? `<span class="popup-badge high">${t('popups.militaryVessel.aisDark')}</span>`
       : '';
 
+    // USNI deployment status badge
+    const deploymentBadge = vessel.usniDeploymentStatus && vessel.usniDeploymentStatus !== 'unknown'
+      ? `<span class="popup-badge ${vessel.usniDeploymentStatus === 'deployed' ? 'high' : vessel.usniDeploymentStatus === 'underway' ? 'elevated' : 'low'}">${vessel.usniDeploymentStatus.toUpperCase().replace('-', ' ')}</span>`
+      : '';
+
     // Show AIS ship type when military type is unknown
     const displayType = vessel.vesselType === 'unknown' && vessel.aisShipType
       ? vessel.aisShipType
@@ -1932,7 +2036,7 @@ export class MapPopup {
     const vesselOperator = escapeHtml(operatorLabels[vessel.operator] || vessel.operatorCountry || t('popups.unknown'));
     const vesselTypeLabel = escapeHtml(displayType);
     const vesselBadgeType = escapeHtml(badgeType);
-    const vesselMmsi = escapeHtml(vessel.mmsi);
+    const vesselMmsi = escapeHtml(vessel.mmsi || '—');
     const vesselHull = vessel.hullNumber ? escapeHtml(vessel.hullNumber) : '';
     const vesselNote = vessel.note ? escapeHtml(vessel.note) : '';
 
@@ -1940,6 +2044,7 @@ export class MapPopup {
       <div class="popup-header military-vessel ${vessel.operator}">
         <span class="popup-title">${vesselName}</span>
         ${darkWarning}
+        ${deploymentBadge}
         <span class="popup-badge elevated">${vesselBadgeType}</span>
         <button class="popup-close">×</button>
       </div>
@@ -1950,6 +2055,18 @@ export class MapPopup {
             <span class="stat-label">${t('popups.type')}</span>
             <span class="stat-value">${vesselTypeLabel}</span>
           </div>
+          ${vessel.usniRegion ? `
+          <div class="popup-stat">
+            <span class="stat-label">${t('popups.militaryVessel.region')}</span>
+            <span class="stat-value">${escapeHtml(vessel.usniRegion)}</span>
+          </div>
+          ` : ''}
+          ${vessel.usniStrikeGroup ? `
+          <div class="popup-stat">
+            <span class="stat-label">${t('popups.militaryVessel.strikeGroup')}</span>
+            <span class="stat-value">${escapeHtml(vessel.usniStrikeGroup)}</span>
+          </div>
+          ` : ''}
           <div class="popup-stat">
             <span class="stat-label">${t('popups.militaryVessel.speed')}</span>
             <span class="stat-value">${vessel.speed} kts</span>
@@ -1958,10 +2075,12 @@ export class MapPopup {
             <span class="stat-label">${t('popups.militaryVessel.heading')}</span>
             <span class="stat-value">${Math.round(vessel.heading)}°</span>
           </div>
+          ${vessel.mmsi ? `
           <div class="popup-stat">
             <span class="stat-label">${t('popups.militaryVessel.mmsi')}</span>
             <span class="stat-value">${vesselMmsi}</span>
           </div>
+          ` : ''}
           ${vessel.hullNumber ? `
           <div class="popup-stat">
             <span class="stat-label">${t('popups.militaryVessel.hull')}</span>
@@ -1969,8 +2088,11 @@ export class MapPopup {
           </div>
           ` : ''}
         </div>
+        ${vessel.usniActivityDescription ? `<p class="popup-description"><strong>${t('popups.militaryVessel.usniIntel')}:</strong> ${escapeHtml(vessel.usniActivityDescription)}</p>` : ''}
         ${vessel.note ? `<p class="popup-description">${vesselNote}</p>` : ''}
         ${vessel.isDark ? `<p class="popup-description alert">${t('popups.militaryVessel.darkDescription')}</p>` : ''}
+        ${vessel.usniSource ? `<p class="popup-description" style="opacity:0.7;font-size:0.85em">${t('popups.militaryVessel.approximatePosition')}</p>` : ''}
+        ${vessel.usniArticleUrl ? `<div class="popup-attribution"><a href="${escapeHtml(vessel.usniArticleUrl)}" target="_blank" rel="noopener">${t('popups.militaryVessel.usniSource')}${vessel.usniArticleDate ? ` (${new Date(vessel.usniArticleDate).toLocaleDateString()})` : ''}</a></div>` : ''}
       </div>
     `;
   }

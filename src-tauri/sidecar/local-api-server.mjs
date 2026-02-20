@@ -3,9 +3,12 @@ import http, { createServer } from 'node:http';
 import https from 'node:https';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { readdir } from 'node:fs/promises';
-import { gzipSync } from 'node:zlib';
+import { promisify } from 'node:util';
+import { brotliCompress, gzipSync } from 'node:zlib';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
+
+const brotliCompressAsync = promisify(brotliCompress);
 
 // Monkey-patch globalThis.fetch to force IPv4 for HTTPS requests.
 // Node.js built-in fetch (undici) tries IPv6 first via Happy Eyeballs.
@@ -86,6 +89,7 @@ const ALLOWED_ENV_KEYS = new Set([
   'OTX_API_KEY', 'ABUSEIPDB_API_KEY', 'WINGBITS_API_KEY', 'WS_RELAY_URL',
   'VITE_OPENSKY_RELAY_URL', 'OPENSKY_CLIENT_ID', 'OPENSKY_CLIENT_SECRET',
   'AISSTREAM_API_KEY', 'VITE_WS_RELAY_URL', 'FINNHUB_API_KEY', 'NASA_FIRMS_API_KEY',
+  'OLLAMA_API_URL', 'OLLAMA_MODEL',
 ]);
 
 function json(data, status = 200, extraHeaders = {}) {
@@ -93,6 +97,36 @@ function json(data, status = 200, extraHeaders = {}) {
     status,
     headers: { 'content-type': 'application/json', ...extraHeaders },
   });
+}
+
+function canCompress(headers, body) {
+  return body.length > 1024 && !headers['content-encoding'];
+}
+
+function appendVary(existing, token) {
+  const value = typeof existing === 'string' ? existing : '';
+  const parts = value.split(',').map((p) => p.trim()).filter(Boolean);
+  if (!parts.some((p) => p.toLowerCase() === token.toLowerCase())) {
+    parts.push(token);
+  }
+  return parts.join(', ');
+}
+
+async function maybeCompressResponseBody(body, headers, acceptEncoding = '') {
+  if (!canCompress(headers, body)) return body;
+  headers['vary'] = appendVary(headers['vary'], 'Accept-Encoding');
+
+  if (acceptEncoding.includes('br')) {
+    headers['content-encoding'] = 'br';
+    return brotliCompressAsync(body);
+  }
+
+  if (acceptEncoding.includes('gzip')) {
+    headers['content-encoding'] = 'gzip';
+    return gzipSync(body);
+  }
+
+  return body;
 }
 
 function isBracketSegment(segment) {
@@ -616,6 +650,34 @@ async function validateSecretAgainstProvider(key, rawValue, context = {}) {
       return ok('NASA FIRMS key verified');
     }
 
+    case 'OLLAMA_API_URL': {
+      let probeUrl;
+      try {
+        const parsed = new URL(value);
+        if (!['http:', 'https:'].includes(parsed.protocol)) return fail('Must be an http(s) URL');
+        // Probe the OpenAI-compatible models endpoint
+        probeUrl = new URL('/v1/models', value).toString();
+      } catch {
+        return fail('Invalid URL');
+      }
+      const response = await fetchWithTimeout(probeUrl, { method: 'GET' }, 8000);
+      if (!response.ok) {
+        // Fall back to native Ollama /api/tags endpoint
+        try {
+          const tagsUrl = new URL('/api/tags', value).toString();
+          const tagsResponse = await fetchWithTimeout(tagsUrl, { method: 'GET' }, 8000);
+          if (!tagsResponse.ok) return fail(`Ollama probe failed (${tagsResponse.status})`);
+          return ok('Ollama endpoint verified (native API)');
+        } catch {
+          return fail(`Ollama probe failed (${response.status})`);
+        }
+      }
+      return ok('Ollama endpoint verified');
+    }
+
+    case 'OLLAMA_MODEL':
+      return ok('Model name stored');
+
     case 'WS_RELAY_URL':
     case 'VITE_WS_RELAY_URL':
     case 'VITE_OPENSKY_RELAY_URL': {
@@ -843,7 +905,8 @@ export async function createLocalApiServer(options = {}) {
     }
 
     const start = Date.now();
-    const skipRecord = requestUrl.pathname === '/api/local-traffic-log'
+    const skipRecord = req.method === 'OPTIONS'
+      || requestUrl.pathname === '/api/local-traffic-log'
       || requestUrl.pathname === '/api/local-debug-toggle'
       || requestUrl.pathname === '/api/local-env-update'
       || requestUrl.pathname === '/api/local-validate-secret';
@@ -855,7 +918,7 @@ export async function createLocalApiServer(options = {}) {
       const headers = Object.fromEntries(response.headers.entries());
       const corsOrigin = getSidecarCorsOrigin(req);
       headers['access-control-allow-origin'] = corsOrigin;
-      headers['vary'] = headers['vary'] ? headers['vary'] + ', Origin' : 'Origin';
+      headers['vary'] = appendVary(headers['vary'], 'Origin');
 
       if (!skipRecord) {
         recordTraffic({
@@ -868,10 +931,10 @@ export async function createLocalApiServer(options = {}) {
       }
 
       const acceptEncoding = req.headers['accept-encoding'] || '';
-      if (acceptEncoding.includes('gzip') && body.length > 1024) {
-        body = gzipSync(body);
-        headers['content-encoding'] = 'gzip';
-        headers['vary'] = 'Accept-Encoding';
+      body = await maybeCompressResponseBody(body, headers, acceptEncoding);
+
+      if (headers['content-encoding']) {
+        delete headers['content-length'];
       }
 
       res.writeHead(response.status, headers);

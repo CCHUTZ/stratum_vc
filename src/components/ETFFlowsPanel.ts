@@ -68,11 +68,12 @@ export class ETFFlowsPanel extends Panel {
 
   private async fetchData(): Promise<void> {
     try {
-      const res = await fetch('/api/etf-flows');
+      const res = await fetch('/api/etf-flows', { signal: this.signal });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       this.data = await res.json();
       this.error = null;
     } catch (err) {
+      if (this.isAbortError(err)) return;
       this.error = err instanceof Error ? err.message : 'Failed to fetch';
     } finally {
       this.loading = false;
@@ -102,7 +103,7 @@ export class ETFFlowsPanel extends Panel {
 
     const d = this.data;
     if (!d.etfs.length) {
-      this.setContent('<div class="panel-loading-text">ETF data temporarily unavailable</div>');
+      this.setContent(`<div class="panel-loading-text">${t('components.etfFlows.unavailable')}</div>`);
       return;
     }
 
@@ -123,19 +124,19 @@ export class ETFFlowsPanel extends Panel {
       <div class="etf-flows-container">
         <div class="etf-summary ${dirClass}">
           <div class="etf-summary-item">
-            <span class="etf-summary-label">Net Flow</span>
-            <span class="etf-summary-value ${dirClass}">${escapeHtml(s.netDirection)}</span>
+            <span class="etf-summary-label">${t('components.etfFlows.netFlow')}</span>
+            <span class="etf-summary-value ${dirClass}">${s.netDirection.includes('INFLOW') ? t('components.etfFlows.netInflow') : t('components.etfFlows.netOutflow')}</span>
           </div>
           <div class="etf-summary-item">
-            <span class="etf-summary-label">Est. Flow</span>
+            <span class="etf-summary-label">${t('components.etfFlows.estFlow')}</span>
             <span class="etf-summary-value">$${formatVolume(Math.abs(s.totalEstFlow))}</span>
           </div>
           <div class="etf-summary-item">
-            <span class="etf-summary-label">Total Vol</span>
+            <span class="etf-summary-label">${t('components.etfFlows.totalVol')}</span>
             <span class="etf-summary-value">${formatVolume(s.totalVolume)}</span>
           </div>
           <div class="etf-summary-item">
-            <span class="etf-summary-label">ETFs</span>
+            <span class="etf-summary-label">${t('components.etfFlows.etfs')}</span>
             <span class="etf-summary-value">${s.inflowCount}↑ ${s.outflowCount}↓</span>
           </div>
         </div>
@@ -143,11 +144,11 @@ export class ETFFlowsPanel extends Panel {
           <table class="etf-table">
             <thead>
               <tr>
-                <th>Ticker</th>
-                <th>Issuer</th>
-                <th>Est. Flow</th>
-                <th>Volume</th>
-                <th>Change</th>
+                <th>${t('components.etfFlows.table.ticker')}</th>
+                <th>${t('components.etfFlows.table.issuer')}</th>
+                <th>${t('components.etfFlows.table.estFlow')}</th>
+                <th>${t('components.etfFlows.table.volume')}</th>
+                <th>${t('components.etfFlows.table.change')}</th>
               </tr>
             </thead>
             <tbody>${rows}</tbody>
