@@ -374,6 +374,7 @@ const STRATUM_PANELS: Record<string, PanelConfig> = {
   map: { name: 'Civilizational Map', enabled: true, priority: 1 },
   'live-news': { name: 'Civilizational News', enabled: true, priority: 1 },
   insights: { name: 'Five Lenses Analysis', enabled: true, priority: 1 },
+  'stratum-civilizational': { name: 'Civilizational Analysis', enabled: true, priority: 2 },
   stratum_tier1: { name: 'Core Analysis Feeds', enabled: true, priority: 1 },
   middle_east: { name: 'Middle East', enabled: true, priority: 2 },
   india: { name: 'India', enabled: true, priority: 2 },
