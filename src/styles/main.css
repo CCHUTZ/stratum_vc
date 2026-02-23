@@ -14189,12 +14189,28 @@ body.has-critical-banner .panels-grid {
 }
 
 /* ----------------------------------------------------------
-   Intelligence Brief Panel
+   Intelligence Brief Panel — Phase 5 Styling
    ---------------------------------------------------------- */
 
 .intelligence-brief-container {
   font-family: 'SF Mono', Monaco, monospace;
   color: #e0e8ff;
+  background: #050d1a;
+  padding: 12px;
+  border: 1px solid #0d2040;
+  border-radius: 3px;
+}
+
+.intelligence-brief-container h3 {
+  font-family: 'SF Mono', Monaco, monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: #4a9eff;
+  border-bottom: 1px solid #1a3a6e;
+  padding-bottom: 6px;
+  font-size: 0.72em;
+  margin: 0 0 10px 0;
+  font-weight: 600;
 }
 
 .ib-region-block {
@@ -14266,9 +14282,9 @@ body.has-critical-banner .panels-grid {
 .ib-alert-item {
   background: #0a1628;
   border-left: 3px solid #ff4444;
-  padding: 8px 10px;
+  padding: 8px 12px;
+  margin-bottom: 6px;
   border-radius: 2px;
-  font-size: 0.75em;
 }
 
 .ib-alert-header {
@@ -14279,16 +14295,16 @@ body.has-critical-banner .panels-grid {
 }
 
 .ib-alert-name {
-  font-weight: bold;
-  color: #ff8888;
+  color: #ffffff;
+  font-weight: 600;
 }
 
 .ib-alert-intensity {
+  font-size: 0.72em;
   padding: 2px 6px;
-  border-radius: 3px;
+  border-radius: 2px;
   color: white;
   font-weight: bold;
-  font-size: 0.85em;
 }
 
 .ib-alert-meta {
@@ -14299,6 +14315,8 @@ body.has-critical-banner .panels-grid {
 }
 
 .ib-alert-region {
+  color: #4a9eff;
+  font-size: 0.72em;
   padding: 2px 4px;
   background: #1a2a40;
   border-radius: 2px;
@@ -14309,17 +14327,19 @@ body.has-critical-banner .panels-grid {
 }
 
 .ib-alert-phase {
-  color: #ccaa44;
-  font-size: 0.7em;
+  color: #ffaa00;
+  font-size: 0.68em;
+  font-style: italic;
   margin-top: 2px;
 }
 
 /* Section Placeholders */
 .ib-section-placeholder {
   padding: 12px 8px;
-  background: #0a1628;
+  background: #070f1e;
+  border-left: 2px solid #1a3a6e;
   border-radius: 3px;
-  border-left: 2px solid #444;
+  opacity: 0.7;
 }
 
 .ib-placeholder-subtitle {
