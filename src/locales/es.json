@@ -1301,6 +1301,9 @@
         "onStation": "En la estación",
         "enRoute": "En ruta"
       },
+      "health": {
+        "evidence": "EVIDENCIA DE ESTADO"
+      },
       "description": "Cable submarino de telecomunicaciones que transporta tráfico internacional de Internet. Estos cables de fibra óptica forman la columna vertebral de la conectividad global a Internet y transmiten más del 95% de los datos intercontinentales."
     },
     "repairShip": {
@@ -1754,6 +1757,7 @@
     "noData": "No hay datos disponibles",
     "updated": "Actualizado ahora",
     "ago": "hace {{time}}",
+    "retrying": "Reintentando…",
     "failedToLoad": "Error al cargar los datos",
     "noDataShort": "Sin datos",
     "noDataAvailable": "No hay datos disponibles",
@@ -1801,6 +1805,7 @@
     "close": "Cerrar",
     "currentVariant": "(actual)",
     "retry": "Retry",
+    "retrying": "Reintentando...",
     "refresh": "Refresh"
   }
 }

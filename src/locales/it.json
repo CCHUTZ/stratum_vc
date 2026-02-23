@@ -1301,6 +1301,9 @@
         "onStation": "Sulla stazione",
         "enRoute": "In viaggio"
       },
+      "health": {
+        "evidence": "EVIDENZE DI STATO"
+      },
       "description": "Cavo sottomarino per telecomunicazioni che trasporta traffico Internet internazionale. Questi cavi in ​​fibra ottica costituiscono la spina dorsale della connettività Internet globale, trasmettendo oltre il 95% dei dati intercontinentali."
     },
     "repairShip": {
@@ -1754,6 +1757,7 @@
     "noData": "Nessun dato disponibile",
     "updated": "Aggiornato ora",
     "ago": "{{time}} fa",
+    "retrying": "Nuovo tentativo…",
     "failedToLoad": "Errore nel caricamento dei dati",
     "noDataShort": "Nessun dato",
     "noDataAvailable": "Nessun dato disponibile",
@@ -1801,6 +1805,7 @@
     "close": "Chiudi",
     "currentVariant": "(corrente)",
     "retry": "Retry",
+    "retrying": "Nuovo tentativo...",
     "refresh": "Refresh"
   }
 }

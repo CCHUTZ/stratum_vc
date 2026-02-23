@@ -11,27 +11,25 @@ import {
   MOBILE_DEFAULT_MAP_LAYERS,
   STORAGE_KEYS,
   SITE_VARIANT,
+  LAYER_TO_SOURCE,
 } from '@/config';
 import { BETA_MODE } from '@/config/beta';
-import { fetchCategoryFeeds, getFeedFailures, fetchMultipleStocks, fetchCrypto, fetchPredictions, fetchEarthquakes, fetchWeatherAlerts, fetchFredData, fetchInternetOutages, isOutagesConfigured, fetchAisSignals, initAisStream, getAisStatus, disconnectAisStream, isAisConfigured, fetchCableActivity, fetchProtestEvents, getProtestStatus, fetchFlightDelays, fetchMilitaryFlights, fetchMilitaryVessels, initMilitaryVesselStream, isMilitaryVesselTrackingConfigured, fetchUSNIFleetReport, initDB, updateBaseline, calculateDeviation, addToSignalHistory, saveSnapshot, cleanOldSnapshots, analysisWorker, fetchPizzIntStatus, fetchGdeltTensions, fetchNaturalEvents, fetchRecentAwards, fetchOilAnalytics, fetchCyberThreats, drainTrendingSignals } from '@/services';
-import { fetchCountryMarkets } from '@/services/polymarket';
+import { fetchCategoryFeeds, getFeedFailures, fetchMultipleStocks, fetchCrypto, fetchPredictions, fetchEarthquakes, fetchWeatherAlerts, fetchFredData, fetchInternetOutages, isOutagesConfigured, fetchAisSignals, initAisStream, getAisStatus, disconnectAisStream, isAisConfigured, fetchCableActivity, fetchCableHealth, fetchProtestEvents, getProtestStatus, fetchFlightDelays, fetchMilitaryFlights, fetchMilitaryVessels, initMilitaryVesselStream, isMilitaryVesselTrackingConfigured, fetchUSNIFleetReport, initDB, updateBaseline, calculateDeviation, addToSignalHistory, saveSnapshot, cleanOldSnapshots, analysisWorker, fetchPizzIntStatus, fetchGdeltTensions, fetchNaturalEvents, fetchRecentAwards, fetchOilAnalytics, fetchCyberThreats, drainTrendingSignals } from '@/services';
+import { fetchCountryMarkets } from '@/services/prediction';
 import { mlWorker } from '@/services/ml-worker';
 import { clusterNewsHybrid } from '@/services/clustering';
 import { ingestProtests, ingestFlights, ingestVessels, ingestEarthquakes, detectGeoConvergence, geoConvergenceToSignal } from '@/services/geo-convergence';
 import { signalAggregator } from '@/services/signal-aggregator';
 import { updateAndCheck } from '@/services/temporal-baseline';
-import { fetchAllFires, flattenFires, computeRegionStats } from '@/services/firms-satellite';
+import { fetchAllFires, flattenFires, computeRegionStats, toMapFires } from '@/services/wildfires';
 import { SatelliteFiresPanel } from '@/components/SatelliteFiresPanel';
 import { analyzeFlightsForSurge, surgeAlertToSignal, detectForeignMilitaryPresence, foreignPresenceToSignal, type TheaterPostureSummary } from '@/services/military-surge';
 import { fetchCachedTheaterPosture } from '@/services/cached-theater-posture';
 import { ingestProtestsForCII, ingestMilitaryForCII, ingestNewsForCII, ingestOutagesForCII, ingestConflictsForCII, ingestUcdpForCII, ingestHapiForCII, ingestDisplacementForCII, ingestClimateForCII, startLearning, isInLearningMode, calculateCII, getCountryData, TIER1_COUNTRIES } from '@/services/country-instability';
 import { dataFreshness, type DataSourceId } from '@/services/data-freshness';
 import { focusInvestmentOnMap } from '@/services/investments-focus';
-import { fetchConflictEvents } from '@/services/conflicts';
-import { fetchUcdpClassifications } from '@/services/ucdp';
-import { fetchHapiSummary } from '@/services/hapi';
-import { fetchUcdpEvents, deduplicateAgainstAcled } from '@/services/ucdp-events';
-import { fetchUnhcrPopulation } from '@/services/unhcr';
+import { fetchConflictEvents, fetchUcdpClassifications, fetchHapiSummary, fetchUcdpEvents, deduplicateAgainstAcled } from '@/services/conflict';
+import { fetchUnhcrPopulation } from '@/services/displacement';
 import { fetchClimateAnomalies } from '@/services/climate';
 import { enrichEventsWithExposure } from '@/services/population-exposure';
 import { buildMapUrl, debounce, loadFromStorage, parseMapUrlState, saveToStorage, ExportPanel, getCircuitBreakerCooldownInfo, isMobileDevice, setTheme, getCurrentTheme } from '@/utils';
@@ -90,6 +88,7 @@ import { collectStoryData } from '@/services/story-data';
 import { renderStoryToCanvas } from '@/services/story-renderer';
 import { openStoryModal } from '@/components/StoryModal';
 import { INTEL_HOTSPOTS, CONFLICT_ZONES, MILITARY_BASES, UNDERSEA_CABLES, NUCLEAR_FACILITIES } from '@/config/geo';
+import { MarketServiceClient } from '@/generated/client/worldmonitor/market/v1/service_client';
 import { PIPELINES } from '@/config/pipelines';
 import { AI_DATA_CENTERS } from '@/config/ai-datacenters';
 import { GAMMA_IRRADIATORS } from '@/config/irradiators';
@@ -99,12 +98,16 @@ import { STARTUP_ECOSYSTEMS } from '@/config/startup-ecosystems';
 import { TECH_HQS, ACCELERATORS } from '@/config/tech-geo';
 import { STOCK_EXCHANGES, FINANCIAL_CENTERS, CENTRAL_BANKS, COMMODITY_HUBS } from '@/config/finance-geo';
 import { isDesktopRuntime } from '@/services/runtime';
+import { IntelligenceServiceClient } from '@/generated/client/worldmonitor/intelligence/v1/service_client';
+import { ResearchServiceClient } from '@/generated/client/worldmonitor/research/v1/service_client';
 import { isFeatureAvailable } from '@/services/runtime-config';
+import { trackEvent, trackPanelView, trackVariantSwitch, trackThemeChanged, trackMapViewChange, trackMapLayerToggle, trackCountrySelected, trackCountryBriefOpened, trackSearchResultSelected, trackPanelToggled, trackUpdateShown, trackUpdateClicked, trackUpdateDismissed, trackCriticalBannerAction, trackDeeplinkOpened } from '@/services/analytics';
 import { invokeTauri } from '@/services/tauri-bridge';
 import { getCountryAtCoordinates, hasCountryGeometry, isCoordinateInCountry, preloadCountryGeometry } from '@/services/country-geometry';
 import { initI18n, t, changeLanguage } from '@/services/i18n';
 
-import type { PredictionMarket, MarketData, ClusteredEvent } from '@/types';
+import type { MarketData, ClusteredEvent } from '@/types';
+import type { PredictionMarket } from '@/services/prediction';
 
 type IntlDisplayNamesCtor = new (
   locales: string | string[],
@@ -327,6 +330,7 @@ export class App {
   }
 
   public async init(): Promise<void> {
+    const initStart = performance.now();
     await initDB();
     await initI18n();
 
@@ -399,6 +403,15 @@ export class App {
     this.handleDeepLinks();
 
     this.setupUpdateChecks();
+
+    // Track app load timing and panel count
+    trackEvent('wm_app_loaded', {
+      load_time_ms: Math.round(performance.now() - initStart),
+      panel_count: Object.keys(this.panels).length,
+    });
+
+    // Observe panel visibility for usage analytics
+    this.setupPanelViewTracking();
   }
 
   private handleDeepLinks(): void {
@@ -411,6 +424,7 @@ export class App {
     if (url.pathname === '/story' || url.searchParams.has('c')) {
       const countryCode = url.searchParams.get('c');
       if (countryCode) {
+        trackDeeplinkOpened('story', countryCode);
         const countryNames: Record<string, string> = {
           UA: 'Ukraine', RU: 'Russia', CN: 'China', US: 'United States',
           IR: 'Iran', IL: 'Israel', TW: 'Taiwan', KP: 'North Korea',
@@ -447,6 +461,7 @@ export class App {
     const deepLinkCountry = this.pendingDeepLinkCountry;
     this.pendingDeepLinkCountry = null;
     if (deepLinkCountry) {
+      trackDeeplinkOpened('country', deepLinkCountry);
       const cName = App.resolveCountryName(deepLinkCountry);
       let attempts = 0;
       const checkAndOpenBrief = () => {
@@ -463,6 +478,30 @@ export class App {
         }
       };
       setTimeout(checkAndOpenBrief, DEEP_LINK_INITIAL_DELAY_MS);
+    }
+  }
+
+  private setupPanelViewTracking(): void {
+    const viewedPanels = new Set<string>();
+    const observer = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.isIntersecting && entry.intersectionRatio >= 0.3) {
+          const id = (entry.target as HTMLElement).dataset.panel;
+          if (id && !viewedPanels.has(id)) {
+            viewedPanels.add(id);
+            trackPanelView(id);
+          }
+        }
+      }
+    }, { threshold: 0.3 });
+
+    const grid = document.getElementById('panelsGrid');
+    if (grid) {
+      for (const child of Array.from(grid.children)) {
+        if ((child as HTMLElement).dataset.panel) {
+          observer.observe(child);
+        }
+      }
     }
   }
 
@@ -525,6 +564,7 @@ export class App {
         ? data.url
         : 'https://github.com/koala73/worldmonitor/releases/latest';
       this.logUpdaterOutcome('update_available', { current, remote, dismissed: false });
+      trackUpdateShown(current, remote);
       await this.showUpdateBadge(remote, releaseUrl);
     } catch (error) {
       this.logUpdaterOutcome('fetch_failed', {
@@ -597,6 +637,7 @@ export class App {
     badge.textContent = `UPDATE v${version}`;
     badge.addEventListener('click', (e) => {
       e.preventDefault();
+      trackUpdateClicked(version);
       if (this.isDesktopApp) {
         void invokeTauri<void>('open_url', { url }).catch((error) => {
           this.logUpdaterOutcome('open_failed', {
@@ -616,6 +657,7 @@ export class App {
     dismiss.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
+      trackUpdateDismissed(version);
       localStorage.setItem(`wm-update-dismissed-${version}`, '1');
       badge.remove();
     });
@@ -716,21 +758,7 @@ export class App {
   }
 
   private syncDataFreshnessWithLayers(): void {
-    // Map layer toggles to data source IDs
-    const layerToSource: Partial<Record<keyof MapLayers, DataSourceId[]>> = {
-      military: ['opensky', 'wingbits'],
-      ais: ['ais'],
-      natural: ['usgs'],
-      weather: ['weather'],
-      outages: ['outages'],
-      cyberThreats: ['cyber_threats'],
-      protests: ['acled', 'gdelt_doc'],
-      ucdpEvents: ['ucdp_events'],
-      displacement: ['unhcr'],
-      climate: ['climate'],
-    };
-
-    for (const [layer, sourceIds] of Object.entries(layerToSource)) {
+    for (const [layer, sourceIds] of Object.entries(LAYER_TO_SOURCE)) {
       const enabled = this.mapLayers[layer as keyof MapLayers] ?? false;
       for (const sourceId of sourceIds) {
         dataFreshness.setEnabled(sourceId as DataSourceId, enabled);
@@ -747,26 +775,15 @@ export class App {
   }
 
   private setupMapLayerHandlers(): void {
-    this.map?.setOnLayerChange((layer, enabled) => {
-      console.log(`[App.onLayerChange] ${layer}: ${enabled}`);
+    this.map?.setOnLayerChange((layer, enabled, source) => {
+      console.log(`[App.onLayerChange] ${layer}: ${enabled} (${source})`);
+      trackMapLayerToggle(layer, enabled, source);
       // Save layer settings
       this.mapLayers[layer] = enabled;
       saveToStorage(STORAGE_KEYS.mapLayers, this.mapLayers);
 
       // Sync data freshness tracker
-      const layerToSource: Partial<Record<keyof MapLayers, DataSourceId[]>> = {
-        military: ['opensky', 'wingbits'],
-        ais: ['ais'],
-        natural: ['usgs'],
-        weather: ['weather'],
-        outages: ['outages'],
-        cyberThreats: ['cyber_threats'],
-        protests: ['acled', 'gdelt_doc'],
-        ucdpEvents: ['ucdp_events'],
-        displacement: ['unhcr'],
-        climate: ['climate'],
-      };
-      const sourceIds = layerToSource[layer];
+      const sourceIds = LAYER_TO_SOURCE[layer];
       if (sourceIds) {
         for (const sourceId of sourceIds) {
           dataFreshness.setEnabled(sourceId, enabled);
@@ -825,6 +842,7 @@ export class App {
 
     this.map.onCountryClicked(async (countryClick) => {
       if (countryClick.code && countryClick.name) {
+        trackCountrySelected(countryClick.code, countryClick.name, 'map');
         this.openCountryBriefByCode(countryClick.code, countryClick.name);
       } else {
         this.openCountryBrief(countryClick.lat, countryClick.lon);
@@ -870,6 +888,7 @@ export class App {
   public async openCountryBriefByCode(code: string, country: string): Promise<void> {
     if (!this.countryBriefPage) return;
     this.map?.setRenderPaused(true);
+    trackCountryBriefOpened(code);
 
     // Normalize to canonical name (GeoJSON may use "United States of America" etc.)
     const canonicalName = TIER1_COUNTRIES[code] || App.resolveCountryName(code);
@@ -886,9 +905,18 @@ export class App {
     const shareUrl = this.getShareUrl();
     if (shareUrl) history.replaceState(null, '', shareUrl);
 
-    const stockPromise = fetch(`/api/stock-index?code=${encodeURIComponent(code)}`)
-      .then((r) => r.json())
-      .catch(() => ({ available: false }));
+    const marketClient = new MarketServiceClient('', { fetch: (...args) => globalThis.fetch(...args) });
+    const stockPromise = marketClient.getCountryStockIndex({ countryCode: code })
+      .then((resp) => ({
+        available: resp.available,
+        code: resp.code,
+        symbol: resp.symbol,
+        indexName: resp.indexName,
+        price: String(resp.price),
+        weekChangePercent: String(resp.weekChangePercent),
+        currency: resp.currency,
+      }))
+      .catch(() => ({ available: false as const, code: '', symbol: '', indexName: '', price: '0', weekChangePercent: '0', currency: '' }));
 
     stockPromise.then((stock) => {
       if (this.countryBriefPage?.getCode() === code) this.countryBriefPage.updateStock(stock);
@@ -957,18 +985,15 @@ export class App {
         context.stockIndex = `${stockData.indexName}: ${stockData.price} (${pct >= 0 ? '+' : ''}${stockData.weekChangePercent}% week)`;
       }
 
-      let data: Record<string, unknown> | null = null;
+      let briefText = '';
       try {
-        const res = await fetch('/api/country-intel', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ country, code, context }),
-        });
-        data = await res.json();
+        const intelClient = new IntelligenceServiceClient('', { fetch: (...args) => globalThis.fetch(...args) });
+        const resp = await intelClient.getCountryIntelBrief({ countryCode: code });
+        briefText = resp.brief;
       } catch { /* server unreachable */ }
 
-      if (data && data.brief && !data.skipped) {
-        this.countryBriefPage!.updateBrief({ ...data, code } as Parameters<typeof this.countryBriefPage.updateBrief>[0]);
+      if (briefText) {
+        this.countryBriefPage!.updateBrief({ brief: briefText, country, code });
       } else {
         const briefHeadlines = (context.headlines as string[] | undefined) || [];
         let fallbackBrief = '';
@@ -1037,9 +1062,9 @@ export class App {
 
     if (this.intelligenceCache.earthquakes) {
       for (const eq of this.intelligenceCache.earthquakes) {
-        if (inCountry(eq.lat, eq.lon) || eq.place?.toLowerCase().includes(countryLower)) {
+        if (inCountry(eq.location?.latitude ?? 0, eq.location?.longitude ?? 0) || eq.place?.toLowerCase().includes(countryLower)) {
           events.push({
-            timestamp: new Date(eq.time).getTime(),
+            timestamp: eq.occurredAt,
             lane: 'natural',
             label: `M${eq.magnitude.toFixed(1)} ${eq.place}`,
             severity: eq.magnitude >= 6 ? 'critical' : eq.magnitude >= 5 ? 'high' : eq.magnitude >= 4 ? 'medium' : 'low',
@@ -1222,7 +1247,7 @@ export class App {
     let earthquakes = 0;
     if (this.intelligenceCache.earthquakes) {
       earthquakes = this.intelligenceCache.earthquakes.filter((eq) => {
-        if (hasGeoShape) return this.isInCountry(eq.lat, eq.lon, code);
+        if (hasGeoShape) return this.isInCountry(eq.location?.latitude ?? 0, eq.location?.longitude ?? 0, code);
         return eq.place?.toLowerCase().includes(countryLower);
       }).length;
     }
@@ -1273,7 +1298,7 @@ export class App {
   }
 
   private shouldShowIntelligenceNotifications(): boolean {
-    return !this.isMobile && !!this.findingsBadge?.isEnabled();
+    return !this.isMobile && !!this.findingsBadge?.isEnabled() && !!this.findingsBadge?.isPopupEnabled();
   }
 
   private setupSearchModal(): void {
@@ -1458,6 +1483,7 @@ export class App {
   }
 
   private handleSearchResult(result: SearchResult): void {
+    trackSearchResultSelected(result.type);
     switch (result.type) {
       case 'news': {
         // Find and scroll to the news panel containing this item
@@ -1649,6 +1675,7 @@ export class App {
       }
       case 'country': {
         const { code, name } = result.data as { code: string; name: string };
+        trackCountrySelected(code, name, 'search');
         this.openCountryBriefByCode(code, name);
         break;
       }
@@ -1696,7 +1723,7 @@ export class App {
       this.searchModal.registerSource('prediction', this.latestPredictions.map(p => ({
         id: p.title,
         title: p.title,
-        subtitle: `${(p.yesPrice * 100).toFixed(0)}% probability`,
+        subtitle: `${Math.round(p.yesPrice)}% probability`,
         data: p,
       })));
     }
@@ -1791,7 +1818,7 @@ export class App {
       id: `snap-${i}`,
       title: p.title,
       yesPrice: p.yesPrice,
-      noPrice: 1 - p.yesPrice,
+      noPrice: 100 - p.yesPrice,
       volume24h: 0,
       liquidity: 0,
     }));
@@ -1967,8 +1994,8 @@ export class App {
     this.criticalBannerEl.innerHTML = `
       <div class="banner-content">
         <span class="banner-icon">${isCritical ? '🚨' : '⚠️'}</span>
-        <span class="banner-headline">${top.headline}</span>
-        <span class="banner-stats">${top.totalAircraft} aircraft • ${top.summary}</span>
+        <span class="banner-headline">${escapeHtml(top.headline)}</span>
+        <span class="banner-stats">${top.totalAircraft} aircraft • ${escapeHtml(top.summary)}</span>
         ${top.strikeCapable ? '<span class="banner-strike">STRIKE CAPABLE</span>' : ''}
       </div>
       <button class="banner-view" data-lat="${top.centerLat}" data-lon="${top.centerLon}">View Region</button>
@@ -1978,6 +2005,7 @@ export class App {
     // Event handlers
     this.criticalBannerEl.querySelector('.banner-view')?.addEventListener('click', () => {
       console.log('[Banner] View Region clicked:', top.theaterId, 'lat:', top.centerLat, 'lon:', top.centerLon);
+      trackCriticalBannerAction('view', top.theaterId);
       // Use typeof check - truthy check would fail for coordinate 0
       if (typeof top.centerLat === 'number' && typeof top.centerLon === 'number') {
         this.map?.setCenter(top.centerLat, top.centerLon, 4);
@@ -1987,6 +2015,7 @@ export class App {
     });
 
     this.criticalBannerEl.querySelector('.banner-dismiss')?.addEventListener('click', () => {
+      trackCriticalBannerAction('dismiss', top.theaterId);
       this.criticalBannerEl?.classList.add('dismissed');
       document.body.classList.remove('has-critical-banner');
       sessionStorage.setItem('banner-dismissed', Date.now().toString());
@@ -2631,24 +2660,26 @@ export class App {
       const next = getCurrentTheme() === 'dark' ? 'light' : 'dark';
       setTheme(next);
       this.updateHeaderThemeIcon();
+      trackThemeChanged(next);
     });
 
     // Sources modal
     this.setupSourcesModal();
 
-    // Variant switcher: switch variant locally (reload with new config)
-    this.container.querySelectorAll<HTMLAnchorElement>('.variant-option').forEach(link => {
-      link.addEventListener('click', (e) => {
-        const variant = link.dataset.variant;
-        console.log('[App] Variant button clicked:', variant, 'current:', SITE_VARIANT);
-        if (variant && variant !== SITE_VARIANT) {
-          console.log('[App] Switching to variant:', variant);
-          e.preventDefault();
-          localStorage.setItem('worldmonitor-variant', variant);
-          window.location.reload();
-        }
+    // Variant switcher: switch variant locally on desktop (reload with new config)
+    if (this.isDesktopApp) {
+      this.container.querySelectorAll<HTMLAnchorElement>('.variant-option').forEach(link => {
+        link.addEventListener('click', (e) => {
+          const variant = link.dataset.variant;
+          if (variant && variant !== SITE_VARIANT) {
+            e.preventDefault();
+            trackVariantSwitch(SITE_VARIANT, variant);
+            localStorage.setItem('worldmonitor-variant', variant);
+            window.location.reload();
+          }
+        });
       });
-    });
+    }
 
     // Fullscreen toggle
     const fullscreenBtn = document.getElementById('fullscreenBtn');
@@ -2665,6 +2696,7 @@ export class App {
     const regionSelect = document.getElementById('regionSelect') as HTMLSelectElement;
     regionSelect?.addEventListener('change', () => {
       this.map?.setView(regionSelect.value as MapView);
+      trackMapViewChange(regionSelect.value);
     });
 
     // Language selector
@@ -2808,11 +2840,11 @@ export class App {
 
   private toggleFullscreen(): void {
     if (document.fullscreenElement) {
-      void document.exitFullscreen().catch(() => {});
+      try { void document.exitFullscreen()?.catch(() => {}); } catch {}
     } else {
       const el = document.documentElement as HTMLElement & { webkitRequestFullscreen?: () => void };
       if (el.requestFullscreen) {
-        void el.requestFullscreen().catch(() => {});
+        try { void el.requestFullscreen()?.catch(() => {}); } catch {}
       } else if (el.webkitRequestFullscreen) {
         try { el.webkitRequestFullscreen(); } catch {}
       }
@@ -2927,7 +2959,9 @@ export class App {
 
         if (panelKey === 'intel-findings') {
           if (!this.findingsBadge) return;
-          this.findingsBadge.setEnabled(!this.findingsBadge.isEnabled());
+          const newState = !this.findingsBadge.isEnabled();
+          this.findingsBadge.setEnabled(newState);
+          trackPanelToggled('intel-findings', newState);
           this.renderPanelToggles();
           return;
         }
@@ -2936,6 +2970,7 @@ export class App {
         console.log('[Panel Toggle] Clicked:', panelKey, 'Current enabled:', config?.enabled);
         if (config) {
           config.enabled = !config.enabled;
+          trackPanelToggled(panelKey, config.enabled);
           console.log('[Panel Toggle] New enabled:', config.enabled);
           saveToStorage(STORAGE_KEYS.panels, this.panelSettings);
           this.renderPanelToggles();
@@ -3105,6 +3140,7 @@ export class App {
     if (this.mapLayers.weather) tasks.push({ name: 'weather', task: runGuarded('weather', () => this.loadWeatherAlerts()) });
     if (this.mapLayers.ais) tasks.push({ name: 'ais', task: runGuarded('ais', () => this.loadAisSignals()) });
     if (this.mapLayers.cables) tasks.push({ name: 'cables', task: runGuarded('cables', () => this.loadCableActivity()) });
+    if (this.mapLayers.cables) tasks.push({ name: 'cableHealth', task: runGuarded('cableHealth', () => this.loadCableHealth()) });
     if (this.mapLayers.flights) tasks.push({ name: 'flights', task: runGuarded('flights', () => this.loadFlightDelays()) });
     if (CYBER_LAYER_ENABLED && this.mapLayers.cyberThreats) tasks.push({ name: 'cyberThreats', task: runGuarded('cyberThreats', () => this.loadCyberThreats()) });
     if (this.mapLayers.techEvents || SITE_VARIANT === 'tech') tasks.push({ name: 'techEvents', task: runGuarded('techEvents', () => this.loadTechEvents()) });
@@ -3153,7 +3189,7 @@ export class App {
           await this.loadAisSignals();
           break;
         case 'cables':
-          await this.loadCableActivity();
+          await Promise.all([this.loadCableActivity(), this.loadCableHealth()]);
           break;
         case 'protests':
           await this.loadProtests();
@@ -3293,7 +3329,7 @@ export class App {
   private async loadNewsCategory(category: string, feeds: typeof FEEDS.politics): Promise<NewsItem[]> {
     try {
       const panel = this.newsPanels[category];
-      const renderIntervalMs = 250;
+      const renderIntervalMs = 100;
       let lastRenderTime = 0;
       let renderTimeout: ReturnType<typeof setTimeout> | null = null;
       let pendingItems: NewsItem[] | null = null;
@@ -3394,7 +3430,7 @@ export class App {
       .map(([key, feeds]) => ({ key, feeds }));
 
     // Stage category fetches to avoid startup bursts and API pressure in all variants.
-    const maxCategoryConcurrency = SITE_VARIANT === 'finance' ? 3 : SITE_VARIANT === 'tech' ? 4 : 5;
+    const maxCategoryConcurrency = SITE_VARIANT === 'tech' ? 4 : 5;
     const categoryConcurrency = Math.max(1, Math.min(maxCategoryConcurrency, categories.length));
     const categoryResults: PromiseSettledResult<NewsItem[]>[] = [];
     for (let i = 0; i < categories.length; i += categoryConcurrency) {
@@ -3529,30 +3565,41 @@ export class App {
         );
       }
 
-      const commoditiesResult = await fetchMultipleStocks(COMMODITIES, {
-        onBatch: (partialCommodities) => {
-          (this.panels['commodities'] as CommoditiesPanel).renderCommodities(
-            partialCommodities.map((c) => ({
-              display: c.display,
-              price: c.price,
-              change: c.change,
-              sparkline: c.sparkline,
-            }))
-          );
-        },
-      });
-      (this.panels['commodities'] as CommoditiesPanel).renderCommodities(
-        commoditiesResult.data.map((c) => ({ display: c.display, price: c.price, change: c.change, sparkline: c.sparkline }))
-      );
+      const commoditiesPanel = this.panels['commodities'] as CommoditiesPanel;
+      const mapCommodity = (c: MarketData) => ({ display: c.display, price: c.price, change: c.change, sparkline: c.sparkline });
+
+      let commoditiesLoaded = false;
+      for (let attempt = 0; attempt < 3 && !commoditiesLoaded; attempt++) {
+        if (attempt > 0) {
+          commoditiesPanel.showRetrying();
+          await new Promise(r => setTimeout(r, 20_000));
+        }
+        const commoditiesResult = await fetchMultipleStocks(COMMODITIES, {
+          onBatch: (partial) => commoditiesPanel.renderCommodities(partial.map(mapCommodity)),
+        });
+        const mapped = commoditiesResult.data.map(mapCommodity);
+        if (mapped.some(d => d.price !== null)) {
+          commoditiesPanel.renderCommodities(mapped);
+          commoditiesLoaded = true;
+        }
+      }
+      if (!commoditiesLoaded) {
+        commoditiesPanel.renderCommodities([]);
+      }
     } catch {
       this.statusPanel?.updateApi('Finnhub', { status: 'error' });
     }
 
     try {
-      // Crypto
-      const crypto = await fetchCrypto();
+      // Crypto with retry
+      let crypto = await fetchCrypto();
+      if (crypto.length === 0) {
+        (this.panels['crypto'] as CryptoPanel).showRetrying();
+        await new Promise(r => setTimeout(r, 20_000));
+        crypto = await fetchCrypto();
+      }
       (this.panels['crypto'] as CryptoPanel).renderCrypto(crypto);
-      this.statusPanel?.updateApi('CoinGecko', { status: 'ok' });
+      this.statusPanel?.updateApi('CoinGecko', { status: crypto.length > 0 ? 'ok' : 'error' });
     } catch {
       this.statusPanel?.updateApi('CoinGecko', { status: 'error' });
     }
@@ -3629,29 +3676,24 @@ export class App {
     }
 
     try {
-      const res = await fetch('/api/tech-events?type=conference&mappable=true&days=90&limit=50');
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-      const data = await res.json();
+      const client = new ResearchServiceClient('', { fetch: (...args) => globalThis.fetch(...args) });
+      const data = await client.listTechEvents({
+        type: 'conference',
+        mappable: true,
+        days: 90,
+        limit: 50,
+      });
       if (!data.success) throw new Error(data.error || 'Unknown error');
 
       // Transform events for map markers
       const now = new Date();
-      const mapEvents = data.events.map((e: {
-        id: string;
-        title: string;
-        location: string;
-        coords: { lat: number; lng: number; country: string };
-        startDate: string;
-        endDate: string;
-        url: string | null;
-      }) => ({
+      const mapEvents = data.events.map((e) => ({
         id: e.id,
         title: e.title,
         location: e.location,
-        lat: e.coords.lat,
-        lng: e.coords.lng,
-        country: e.coords.country,
+        lat: e.coords?.lat ?? 0,
+        lng: e.coords?.lng ?? 0,
+        country: e.coords?.country ?? '',
         startDate: e.startDate,
         endDate: e.endDate,
         url: e.url,
@@ -3698,7 +3740,7 @@ export class App {
     outages?: InternetOutage[];
     protests?: { events: SocialUnrestEvent[]; sources: { acled: number; gdelt: number } };
     military?: { flights: MilitaryFlight[]; flightClusters: MilitaryFlightCluster[]; vessels: MilitaryVessel[]; vesselClusters: MilitaryVesselCluster[] };
-    earthquakes?: import('@/types').Earthquake[];
+    earthquakes?: import('@/services/earthquakes').Earthquake[];
     usniFleet?: import('@/types').USNIFleetReport;
   } = {};
   private cyberThreatsCache: CyberThreat[] | null = null;
@@ -3868,10 +3910,13 @@ export class App {
     // Fetch UCDP georeferenced events (battles, one-sided violence, non-state conflict)
     tasks.push((async () => {
       try {
-        const [result, protestEvents] = await Promise.all([
-          fetchUcdpEvents(),
-          protestsTask,
-        ]);
+        const protestEvents = await protestsTask;
+        // Retry up to 3 times — UCDP sidecar can return empty on cold start
+        let result = await fetchUcdpEvents();
+        for (let attempt = 1; attempt < 3 && !result.success; attempt++) {
+          await new Promise(r => setTimeout(r, 15_000));
+          result = await fetchUcdpEvents();
+        }
         if (!result.success) {
           dataFreshness.recordError('ucdp_events', 'UCDP events unavailable (retaining prior event state)');
           return;
@@ -3951,6 +3996,8 @@ export class App {
         const exposures = await enrichEventsWithExposure(events);
         (this.panels['population-exposure'] as PopulationExposurePanel)?.setExposures(exposures);
         if (exposures.length > 0) dataFreshness.recordUpdate('worldpop', exposures.length);
+      } else {
+        (this.panels['population-exposure'] as PopulationExposurePanel)?.setExposures([]);
       }
     } catch (error) {
       console.error('[Intelligence] Population exposure fetch failed:', error);
@@ -4093,6 +4140,19 @@ export class App {
       this.statusPanel?.updateFeed('CableOps', { status: 'ok', itemCount });
     } catch {
       this.statusPanel?.updateFeed('CableOps', { status: 'error' });
+    }
+  }
+
+  private async loadCableHealth(): Promise<void> {
+    try {
+      const healthData = await fetchCableHealth();
+      this.map?.setCableHealth(healthData.cables);
+      const cableIds = Object.keys(healthData.cables);
+      const faultCount = cableIds.filter((id) => healthData.cables[id]?.status === 'fault').length;
+      const degradedCount = cableIds.filter((id) => healthData.cables[id]?.status === 'degraded').length;
+      this.statusPanel?.updateFeed('CableHealth', { status: 'ok', itemCount: faultCount + degradedCount });
+    } catch {
+      this.statusPanel?.updateFeed('CableHealth', { status: 'error' });
     }
   }
 
@@ -4302,11 +4362,24 @@ export class App {
       }
 
       if (data.length === 0) {
-        const reason = isFeatureAvailable('economicFred')
-          ? 'FRED data temporarily unavailable — will retry'
-          : 'FRED_API_KEY not configured — add in Settings';
-        economicPanel?.setErrorState(true, reason);
-        this.statusPanel?.updateApi('FRED', { status: 'error' });
+        if (!isFeatureAvailable('economicFred')) {
+          economicPanel?.setErrorState(true, 'FRED_API_KEY not configured — add in Settings');
+          this.statusPanel?.updateApi('FRED', { status: 'error' });
+          return;
+        }
+        // Transient failure — quick retry once
+        economicPanel?.showRetrying();
+        await new Promise(r => setTimeout(r, 20_000));
+        const retryData = await fetchFredData();
+        if (retryData.length === 0) {
+          economicPanel?.setErrorState(true, 'FRED data temporarily unavailable — will retry');
+          this.statusPanel?.updateApi('FRED', { status: 'error' });
+          return;
+        }
+        economicPanel?.setErrorState(false);
+        economicPanel?.update(retryData);
+        this.statusPanel?.updateApi('FRED', { status: 'ok' });
+        dataFreshness.recordUpdate('economic', retryData.length);
         return;
       }
 
@@ -4315,6 +4388,20 @@ export class App {
       this.statusPanel?.updateApi('FRED', { status: 'ok' });
       dataFreshness.recordUpdate('economic', data.length);
     } catch {
+      if (isFeatureAvailable('economicFred')) {
+        economicPanel?.showRetrying();
+        try {
+          await new Promise(r => setTimeout(r, 20_000));
+          const retryData = await fetchFredData();
+          if (retryData.length > 0) {
+            economicPanel?.setErrorState(false);
+            economicPanel?.update(retryData);
+            this.statusPanel?.updateApi('FRED', { status: 'ok' });
+            dataFreshness.recordUpdate('economic', retryData.length);
+            return;
+          }
+        } catch { /* fall through */ }
+      }
       this.statusPanel?.updateApi('FRED', { status: 'error' });
       economicPanel?.setErrorState(true, 'FRED data temporarily unavailable — will retry');
       economicPanel?.setLoading(false);
@@ -4420,16 +4507,16 @@ export class App {
 
         // Feed signal aggregator
         signalAggregator.ingestSatelliteFires(flat.map(f => ({
-          lat: f.lat,
-          lon: f.lon,
+          lat: f.location?.latitude ?? 0,
+          lon: f.location?.longitude ?? 0,
           brightness: f.brightness,
           frp: f.frp,
           region: f.region,
-          acq_date: f.acq_date,
+          acq_date: new Date(f.detectedAt).toISOString().slice(0, 10),
         })));
 
         // Feed map layer
-        this.map?.setFires(flat);
+        this.map?.setFires(toMapFires(flat));
 
         // Feed panel
         (this.panels['satellite-fires'] as SatelliteFiresPanel)?.update(stats, totalCount);
@@ -4533,6 +4620,7 @@ export class App {
     this.scheduleRefresh('firms', () => this.loadFirmsData(), 30 * 60 * 1000);
     this.scheduleRefresh('ais', () => this.loadAisSignals(), REFRESH_INTERVALS.ais, () => this.mapLayers.ais);
     this.scheduleRefresh('cables', () => this.loadCableActivity(), 30 * 60 * 1000, () => this.mapLayers.cables);
+    this.scheduleRefresh('cableHealth', () => this.loadCableHealth(), 5 * 60 * 1000, () => this.mapLayers.cables);
     this.scheduleRefresh('flights', () => this.loadFlightDelays(), 10 * 60 * 1000, () => this.mapLayers.flights);
     this.scheduleRefresh('cyberThreats', () => {
       this.cyberThreatsCache = null;

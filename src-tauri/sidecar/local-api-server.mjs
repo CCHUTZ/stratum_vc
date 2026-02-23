@@ -26,6 +26,22 @@ function normalizeRequestBody(body) {
   return body;
 }
 
+async function resolveRequestBody(input, init, method, isRequest) {
+  if (method === 'GET' || method === 'HEAD') return null;
+
+  if (init?.body != null) {
+    return normalizeRequestBody(init.body);
+  }
+
+  if (isRequest && input?.body) {
+    const clone = typeof input.clone === 'function' ? input.clone() : input;
+    const buffer = await clone.arrayBuffer();
+    return normalizeRequestBody(buffer);
+  }
+
+  return null;
+}
+
 function buildSafeResponse(statusCode, statusText, headers, bodyBuffer) {
   const status = Number.isInteger(statusCode) ? statusCode : 500;
   const body = (status === 204 || status === 205 || status === 304) ? null : bodyBuffer;
@@ -42,13 +58,14 @@ function isTransientVerificationError(error) {
   return /timed out|timeout|network|fetch failed|failed to fetch|socket hang up/i.test(error.message);
 }
 
-globalThis.fetch = function ipv4Fetch(input, init) {
+globalThis.fetch = async function ipv4Fetch(input, init) {
   const isRequest = input && typeof input === 'object' && 'url' in input;
   let url;
   try { url = new URL(typeof input === 'string' ? input : input.url); } catch { return _originalFetch(input, init); }
   if (url.protocol !== 'https:' && url.protocol !== 'http:') return _originalFetch(input, init);
   const mod = url.protocol === 'https:' ? https : http;
   const method = init?.method || (isRequest ? input.method : 'GET');
+  const body = await resolveRequestBody(input, init, method, isRequest);
   const headers = {};
   const rawHeaders = init?.headers || (isRequest ? input.headers : null);
   if (rawHeaders) {
@@ -75,10 +92,7 @@ globalThis.fetch = function ipv4Fetch(input, init) {
     });
     req.on('error', reject);
     if (init?.signal) { init.signal.addEventListener('abort', () => req.destroy()); }
-    if (init?.body) {
-      const body = normalizeRequestBody(init.body);
-      if (body != null) req.write(body);
-    }
+    if (body != null) req.write(body);
     req.end();
   });
 };
@@ -89,7 +103,7 @@ const ALLOWED_ENV_KEYS = new Set([
   'OTX_API_KEY', 'ABUSEIPDB_API_KEY', 'WINGBITS_API_KEY', 'WS_RELAY_URL',
   'VITE_OPENSKY_RELAY_URL', 'OPENSKY_CLIENT_ID', 'OPENSKY_CLIENT_SECRET',
   'AISSTREAM_API_KEY', 'VITE_WS_RELAY_URL', 'FINNHUB_API_KEY', 'NASA_FIRMS_API_KEY',
-  'OLLAMA_API_URL', 'OLLAMA_MODEL',
+  'OLLAMA_API_URL', 'OLLAMA_MODEL', 'WORLDMONITOR_API_KEY',
 ]);
 
 function json(data, status = 200, extraHeaders = {}) {
@@ -223,10 +237,18 @@ async function buildRouteTable(root) {
   return files;
 }
 
+const REQUEST_BODY_CACHE = Symbol('requestBodyCache');
+
 async function readBody(req) {
+  if (Object.prototype.hasOwnProperty.call(req, REQUEST_BODY_CACHE)) {
+    return req[REQUEST_BODY_CACHE];
+  }
+
   const chunks = [];
   for await (const chunk of req) chunks.push(chunk);
-  return chunks.length ? Buffer.concat(chunks) : undefined;
+  const body = chunks.length ? Buffer.concat(chunks) : undefined;
+  req[REQUEST_BODY_CACHE] = body;
+  return body;
 }
 
 function toHeaders(nodeHeaders, options = {}) {
@@ -402,7 +424,7 @@ const SIDECAR_ALLOWED_ORIGINS = [
   /^tauri:\/\/localhost$/,
   /^https?:\/\/localhost(:\d+)?$/,
   /^https?:\/\/127\.0\.0\.1(:\d+)?$/,
-  /^https:\/\/tauri\.localhost(:\d+)?$/,
+  /^https?:\/\/tauri\.localhost(:\d+)?$/,
   /^https:\/\/(.*\.)?worldmonitor\.app$/,
 ];
 
@@ -774,6 +796,72 @@ async function dispatch(requestUrl, req, routes, context) {
     }
     return json({ verboseMode });
   }
+  // Registration — call Convex directly (desktop frontend bypasses sidecar for this endpoint;
+  // this handler only runs when CONVEX_URL is available, e.g. self-hosted deployments)
+  if (requestUrl.pathname === '/api/register-interest' && req.method === 'POST') {
+    const convexUrl = process.env.CONVEX_URL;
+    if (!convexUrl) {
+      return json({ error: 'Registration service not configured — use cloud endpoint directly' }, 503);
+    }
+    try {
+      const body = await new Promise((resolve, reject) => {
+        const chunks = [];
+        req.on('data', c => chunks.push(c));
+        req.on('end', () => resolve(Buffer.concat(chunks).toString()));
+        req.on('error', reject);
+      });
+      const parsed = JSON.parse(body);
+      const email = parsed.email;
+      if (!email || typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        return json({ error: 'Invalid email address' }, 400);
+      }
+      const response = await fetchWithTimeout(`${convexUrl}/api/mutation`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          path: 'registerInterest:register',
+          args: { email, source: parsed.source || 'desktop', appVersion: parsed.appVersion || 'unknown' },
+          format: 'json',
+        }),
+      }, 15000);
+      const responseBody = await response.text();
+      let result;
+      try { result = JSON.parse(responseBody); } catch { result = { status: 'registered' }; }
+      if (result.status === 'error') {
+        return json({ error: result.errorMessage || 'Registration failed' }, 500);
+      }
+      return json(result.value || result);
+    } catch (e) {
+      logVerbose(`[register-interest] error: ${e.message}`);
+      return json({ error: 'Registration service unreachable' }, 502);
+    }
+  }
+
+  // RSS proxy — fetch public feeds directly from desktop, no auth needed
+  if (requestUrl.pathname === '/api/rss-proxy') {
+    const feedUrl = requestUrl.searchParams.get('url');
+    if (!feedUrl) return json({ error: 'Missing url parameter' }, 400);
+    try {
+      const parsed = new URL(feedUrl);
+      const response = await fetchWithTimeout(feedUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'application/rss+xml, application/xml, text/xml, */*',
+          'Accept-Language': 'en-US,en;q=0.9',
+        },
+      }, parsed.hostname.includes('news.google.com') ? 20000 : 12000);
+      const contentType = response.headers?.get?.('content-type') || 'application/xml';
+      const rssBody = await response.text();
+      return new Response(rssBody || '', {
+        status: response.status,
+        headers: { 'content-type': contentType },
+      });
+    } catch (e) {
+      const isTimeout = e.name === 'AbortError' || e.message?.includes('timeout');
+      return json({ error: isTimeout ? 'Feed timeout' : 'Failed to fetch feed', url: feedUrl }, isTimeout ? 504 : 502);
+    }
+  }
+
   // Token auth — required for env mutations and all API handlers
   const expectedToken = process.env.LOCAL_API_TOKEN;
   if (expectedToken) {

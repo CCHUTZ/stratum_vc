@@ -150,6 +150,10 @@ function isLocalOnlyApiTarget(target: string): boolean {
   return target.startsWith('/api/local-');
 }
 
+function isKeyFreeApiTarget(target: string): boolean {
+  return target.startsWith('/api/register-interest');
+}
+
 async function fetchLocalWithStartupRetry(
   nativeFetch: typeof window.fetch,
   localUrl: string,
@@ -218,15 +222,36 @@ export function installRuntimeFetchPatch(): void {
 
     const localUrl = `${localBase}${target}`;
     if (debug) console.log(`[fetch] intercept → ${target}`);
-    const allowCloudFallback = !isLocalOnlyApiTarget(target);
+    let allowCloudFallback = !isLocalOnlyApiTarget(target);
+
+    if (allowCloudFallback && !isKeyFreeApiTarget(target)) {
+      try {
+        const { getSecretState, secretsReady } = await import('@/services/runtime-config');
+        await Promise.race([secretsReady, new Promise<void>(r => setTimeout(r, 2000))]);
+        const wmKeyState = getSecretState('WORLDMONITOR_API_KEY');
+        if (!wmKeyState.present || !wmKeyState.valid) {
+          allowCloudFallback = false;
+        }
+      } catch {
+        allowCloudFallback = false;
+      }
+    }
 
     const cloudFallback = async () => {
       if (!allowCloudFallback) {
-        throw new Error(`Cloud fallback blocked for local-only endpoint: ${target}`);
+        throw new Error(`Cloud fallback blocked for ${target}`);
       }
       const cloudUrl = `${getRemoteApiBaseUrl()}${target}`;
       if (debug) console.log(`[fetch] cloud fallback → ${cloudUrl}`);
-      return nativeFetch(cloudUrl, init);
+      const cloudHeaders = new Headers(init?.headers);
+      if (/^\/api\/[^/]+\/v1\//.test(target)) {
+        const { getRuntimeConfigSnapshot } = await import('@/services/runtime-config');
+        const wmKeyValue = getRuntimeConfigSnapshot().secrets['WORLDMONITOR_API_KEY']?.value;
+        if (wmKeyValue) {
+          cloudHeaders.set('X-WorldMonitor-Key', wmKeyValue);
+        }
+      }
+      return nativeFetch(cloudUrl, { ...init, headers: cloudHeaders });
     };
 
     try {

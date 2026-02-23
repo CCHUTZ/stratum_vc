@@ -1,12 +1,12 @@
 import { Panel } from './Panel';
-import type { FredSeries } from '@/services/fred';
+import type { FredSeries, OilAnalytics } from '@/services/economic';
 import { t } from '@/services/i18n';
-import type { OilAnalytics } from '@/services/oil-analytics';
 import type { SpendingSummary } from '@/services/usa-spending';
-import { getChangeClass, formatChange } from '@/services/fred';
-import { formatOilValue, getTrendIndicator, getTrendColor } from '@/services/oil-analytics';
+import { getChangeClass, formatChange, formatOilValue, getTrendIndicator, getTrendColor } from '@/services/economic';
 import { formatAwardAmount, getAwardTypeIcon } from '@/services/usa-spending';
 import { escapeHtml } from '@/utils/sanitize';
+import { isFeatureAvailable } from '@/services/runtime-config';
+import { isDesktopRuntime } from '@/services/runtime';
 
 type TabId = 'indicators' | 'oil' | 'spending';
 
@@ -116,6 +116,9 @@ export class EconomicPanel extends Panel {
 
   private renderIndicators(): string {
     if (this.fredData.length === 0) {
+      if (isDesktopRuntime() && !isFeatureAvailable('economicFred')) {
+        return `<div class="economic-empty">${t('components.economic.fredKeyMissing')}</div>`;
+      }
       return `<div class="economic-empty">${t('components.economic.noIndicatorData')}</div>`;
     }
 

@@ -1,4 +1,5 @@
 import { LANGUAGES, changeLanguage, getCurrentLanguage, t } from '../services/i18n';
+import { trackLanguageChange } from '@/services/analytics';
 
 export class LanguageSelector {
     private element: HTMLElement;
@@ -32,7 +33,9 @@ export class LanguageSelector {
             sv: 'se',
             ru: 'ru',
             ja: 'jp',
-            tr: 'tr'
+            tr: 'tr',
+            vi: 'vn',
+            th: 'th'
         };
         const countryCode = map[langCode] || langCode;
         return `https://flagcdn.com/24x18/${countryCode}.png`;
@@ -73,6 +76,7 @@ export class LanguageSelector {
             option.addEventListener('click', (e) => {
                 const code = (e.currentTarget as HTMLElement).dataset.code;
                 if (code && code !== this.currentLang) {
+                    trackLanguageChange(code);
                     changeLanguage(code);
                 }
                 this.close();

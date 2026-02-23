@@ -253,6 +253,7 @@
         "some": "Some features need API keys"
       },
       "openSettings": "Open Settings",
+      "skipSetup": "Skip the setup \u2014 a single World Monitor license unlocks everything. Join the waitlist for early access.",
       "summary": {
         "desktop": "Desktop mode",
         "web": "Web mode (read-only, server-managed credentials)",
@@ -296,6 +297,32 @@
       "noTraffic": "No traffic recorded yet.",
       "sidecarUnreachable": "Sidecar not reachable.",
       "logCleared": "Log cleared.",
+      "worldMonitor": {
+        "tabLabel": "World Monitor",
+        "heroTitle": "One key. Everything included.",
+        "heroDescription": "A single World Monitor license replaces every API key and LLM provider you'd otherwise configure yourself. AI summaries, real-time intelligence, market data, conflict tracking, fire detection, satellite imagery — all powered, all managed, zero setup.",
+        "apiKey": {
+          "title": "License Key",
+          "placeholder": "wm_xxxxxxxxxxxxxxxxxxxxxxxx",
+          "description": "Paste your license to unlock every data source and AI feature instantly.",
+          "statusValid": "LICENSED",
+          "statusMissing": "NO LICENSE"
+        },
+        "dividerOr": "OR",
+        "register": {
+          "title": "Reserve Your Spot",
+          "description": "We're preparing to launch World Monitor licenses. Sign up now and be first in line — early members get priority access and founding-member pricing.",
+          "emailPlaceholder": "your@email.com",
+          "submitBtn": "Join Waitlist",
+          "submitting": "Submitting...",
+          "success": "You're on the list! We'll notify you first.",
+          "alreadyRegistered": "You're already on the waitlist.",
+          "error": "Registration failed. Please try again.",
+          "invalidEmail": "Please enter a valid email address."
+        },
+        "byokTitle": "Or bring your own keys",
+        "byokDescription": "Prefer full control? Head to the API Keys and LLMs tabs to configure each data source and AI provider individually."
+      },
       "table": {
         "time": "Time",
         "method": "Method",
@@ -456,6 +483,7 @@
       "noSpending": "No recent government awards",
       "awards": "awards",
       "noIndicatorData": "No indicator data yet - FRED may be loading",
+      "fredKeyMissing": "FRED API key required — add it in Settings to enable economic indicators",
       "noOilDataRetry": "Oil data temporarily unavailable - will retry",
       "vsPreviousWeek": "vs previous week",
       "in": "in"
@@ -772,10 +800,21 @@
           "infraCablesFull": "Major undersea fiber optic cables (20 backbone routes)",
           "infraPipelinesFull": "Oil/gas pipelines (Nord Stream, TAPI, etc.)",
           "infraDatacentersFull": "AI compute clusters >=10,000 GPUs only",
-          "transportShipping": "Vessels, chokepoints, 61 strategic ports",
+          "transportShipping": "Live vessel tracking via AIS (ship positions)",
           "transportDelays": "Airport delays and ground stops (FAA)",
           "naturalEventsFull": "Earthquakes (USGS) + storms, fires, volcanoes, floods (NASA EONET)",
-          "waterwaysLabels": "Strategic chokepoint labels"
+          "firesFull": "Active wildfires and fire perimeters (NASA FIRMS)",
+          "climateAnomalies": "Temperature and precipitation anomalies",
+          "waterwaysLabels": "Strategic chokepoint labels",
+          "geoUcdpEvents": "Uppsala Conflict Data Program armed conflict events",
+          "geoDisplacement": "Refugee and displacement flow patterns",
+          "militarySpaceports": "Rocket launch sites and space facilities",
+          "infraCyberThreats": "Cyber attacks and security events",
+          "mineralsFull": "Strategic mineral deposits and mining sites",
+          "techCyberThreats": "Cyber attacks and security events",
+          "techEvents": "Major tech conferences and events",
+          "techFires": "Active wildfires near tech infrastructure",
+          "financeGulfInvestments": "GCC sovereign wealth fund investments and FDI"
         },
         "notes": {
           "timeAffects": "Affects: Earthquakes, Weather, Protests, Outages"
@@ -976,6 +1015,7 @@
     },
     "intelligenceFindings": {
       "hideFindings": "Hide Intelligence Findings",
+      "popupAlerts": "Pop up new alerts",
       "badgeTitle": "Intelligence findings",
       "title": "Intelligence Findings",
       "none": "No recent intelligence findings",
@@ -1278,6 +1318,9 @@
       "repairStatus": {
         "onStation": "On Station",
         "enRoute": "En Route"
+      },
+      "health": {
+        "evidence": "HEALTH EVIDENCE"
       },
       "description": "Undersea telecommunications cable carrying international internet traffic. These fiber optic cables form the backbone of global internet connectivity, transmitting over 95% of intercontinental data."
     },
@@ -1732,6 +1775,7 @@
     "noDataAvailable": "No data available",
     "updated": "Updated just now",
     "ago": "{{time}} ago",
+    "retrying": "Retrying…",
     "failedToLoad": "Failed to load data",
     "noDataShort": "No data",
     "upstreamUnavailable": "Upstream API unavailable — will retry automatically",
@@ -1778,6 +1822,7 @@
     "close": "Close",
     "currentVariant": "(current)",
     "retry": "Retry",
+    "retrying": "Retrying...",
     "refresh": "Refresh"
   }
 }

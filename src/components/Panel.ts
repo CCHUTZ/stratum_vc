@@ -1,7 +1,8 @@
 import { isDesktopRuntime } from '../services/runtime';
 import { invokeTauri } from '../services/tauri-bridge';
 import { t } from '../services/i18n';
-import { h, replaceChildren } from '../utils/dom-utils';
+import { h, replaceChildren, safeHtml } from '../utils/dom-utils';
+import { trackPanelResized } from '@/services/analytics';
 
 export interface PanelOptions {
   id: string;
@@ -88,7 +89,8 @@ export class Panel {
     if (options.infoTooltip) {
       const infoBtn = h('button', { className: 'panel-info-btn', 'aria-label': t('components.panel.showMethodologyInfo') }, '?');
 
-      const tooltip = h('div', { className: 'panel-info-tooltip' }, options.infoTooltip);
+      const tooltip = h('div', { className: 'panel-info-tooltip' });
+      tooltip.appendChild(safeHtml(options.infoTooltip));
 
       infoBtn.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -189,6 +191,7 @@ export class Panel {
         this.element.classList.contains('span-3') ? 3 :
           this.element.classList.contains('span-2') ? 2 : 1;
       savePanelSpan(this.panelId, currentSpan);
+      trackPanelResized(this.panelId, currentSpan);
     };
 
     this.resizeHandle.addEventListener('mousedown', onMouseDown);
@@ -250,6 +253,7 @@ export class Panel {
         this.element.classList.contains('span-3') ? 3 :
           this.element.classList.contains('span-2') ? 2 : 1;
       savePanelSpan(this.panelId, currentSpan);
+      trackPanelResized(this.panelId, currentSpan);
     };
 
     this.onDocMouseUp = () => {
@@ -298,6 +302,18 @@ export class Panel {
 
   public showError(message = t('common.failedToLoad')): void {
     replaceChildren(this.content, h('div', { className: 'error-message' }, message));
+  }
+
+  public showRetrying(message = t('common.retrying')): void {
+    replaceChildren(this.content,
+      h('div', { className: 'panel-loading' },
+        h('div', { className: 'panel-loading-radar' },
+          h('div', { className: 'panel-radar-sweep' }),
+          h('div', { className: 'panel-radar-dot' }),
+        ),
+        h('div', { className: 'panel-loading-text retrying' }, message),
+      ),
+    );
   }
 
   public showConfigError(message: string): void {

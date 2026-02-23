@@ -1302,6 +1302,9 @@
         "onStation": "現地到着",
         "enRoute": "移動中"
       },
+      "health": {
+        "evidence": "健全性の証拠"
+      },
       "description": "国際インターネットトラフィックを伝送する海底通信ケーブル。これらの光ファイバーケーブルはグローバルインターネット接続の基盤を形成し、大陸間データの95%以上を伝送。"
     },
     "repairShip": {
@@ -1755,6 +1758,7 @@
     "noDataAvailable": "データなし",
     "updated": "たった今更新",
     "ago": "{{time}}前",
+    "retrying": "再試行中…",
     "failedToLoad": "データの読み込みに失敗",
     "noDataShort": "データなし",
     "upstreamUnavailable": "上流APIが利用不可 — 自動リトライ予定",
@@ -1801,6 +1805,7 @@
     "close": "閉じる",
     "currentVariant": "（現在）",
     "retry": "Retry",
+    "retrying": "再試行中...",
     "refresh": "Refresh"
   }
 }

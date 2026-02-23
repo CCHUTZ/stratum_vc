@@ -9,7 +9,6 @@ import type {
   MapLayers,
   Hotspot,
   NewsItem,
-  Earthquake,
   InternetOutage,
   RelatedAsset,
   AssetType,
@@ -18,17 +17,19 @@ import type {
   CableAdvisory,
   RepairShip,
   SocialUnrestEvent,
-  AirportDelayAlert,
   MilitaryFlight,
   MilitaryVessel,
   MilitaryFlightCluster,
   MilitaryVesselCluster,
   NaturalEvent,
   UcdpGeoEvent,
-  DisplacementFlow,
-  ClimateAnomaly,
   CyberThreat,
+  CableHealthRecord,
 } from '@/types';
+import type { AirportDelayAlert } from '@/services/aviation';
+import type { DisplacementFlow } from '@/services/displacement';
+import type { Earthquake } from '@/services/earthquakes';
+import type { ClimateAnomaly } from '@/services/climate';
 import type { WeatherAlert } from '@/services/weather';
 
 export type TimeRange = '1h' | '6h' | '24h' | '48h' | '7d' | 'all';
@@ -234,6 +235,14 @@ export class MapContainer {
     }
   }
 
+  public setCableHealth(healthMap: Record<string, CableHealthRecord>): void {
+    if (this.useDeckGL) {
+      this.deckGLMap?.setCableHealth(healthMap);
+    } else {
+      this.svgMap?.setCableHealth(healthMap);
+    }
+  }
+
   public setProtests(events: SocialUnrestEvent[]): void {
     if (this.useDeckGL) {
       this.deckGLMap?.setProtests(events);
@@ -372,7 +381,7 @@ export class MapContainer {
     }
   }
 
-  public setOnLayerChange(callback: (layer: keyof MapLayers, enabled: boolean) => void): void {
+  public setOnLayerChange(callback: (layer: keyof MapLayers, enabled: boolean, source: 'user' | 'programmatic') => void): void {
     if (this.useDeckGL) {
       this.deckGLMap?.setOnLayerChange(callback);
     } else {

@@ -2,37 +2,12 @@ import { Panel } from './Panel';
 import { t } from '@/services/i18n';
 import { sanitizeUrl } from '@/utils/sanitize';
 import { h, replaceChildren } from '@/utils/dom-utils';
-
-interface TechEventCoords {
-  lat: number;
-  lng: number;
-  country: string;
-  original: string;
-  virtual?: boolean;
-}
-
-interface TechEvent {
-  id: string;
-  title: string;
-  type: 'conference' | 'earnings' | 'ipo' | 'other';
-  location: string | null;
-  coords: TechEventCoords | null;
-  startDate: string;
-  endDate: string;
-  url: string | null;
-}
-
-interface TechEventsResponse {
-  success: boolean;
-  count: number;
-  conferenceCount: number;
-  mappableCount: number;
-  lastUpdated: string;
-  events: TechEvent[];
-  error?: string;
-}
+import { ResearchServiceClient } from '@/generated/client/worldmonitor/research/v1/service_client';
+import type { TechEvent } from '@/generated/client/worldmonitor/research/v1/service_client';
 
 type ViewMode = 'upcoming' | 'conferences' | 'earnings' | 'all';
+
+const researchClient = new ResearchServiceClient('', { fetch: (...args) => globalThis.fetch(...args) });
 
 export class TechEventsPanel extends Panel {
   private viewMode: ViewMode = 'upcoming';
@@ -51,23 +26,39 @@ export class TechEventsPanel extends Panel {
     this.error = null;
     this.render();
 
-    try {
-      const res = await fetch('/api/tech-events?days=180&limit=100', { signal: this.signal });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const data = await researchClient.listTechEvents({
+          type: '',
+          mappable: false,
+          days: 180,
+          limit: 100,
+        });
+        if (!data.success) throw new Error(data.error || 'Unknown error');
 
-      const data: TechEventsResponse = await res.json();
-      if (!data.success) throw new Error(data.error || 'Unknown error');
+        this.events = data.events;
+        this.setCount(data.conferenceCount);
+        this.error = null;
 
-      this.events = data.events;
-      this.setCount(data.conferenceCount);
-    } catch (err) {
-      if (this.isAbortError(err)) return;
-      this.error = err instanceof Error ? err.message : 'Failed to fetch events';
-      console.error('[TechEvents] Fetch error:', err);
-    } finally {
-      this.loading = false;
-      this.render();
+        if (this.events.length === 0 && attempt < 2) {
+          this.showRetrying();
+          await new Promise(r => setTimeout(r, 15_000));
+          continue;
+        }
+        break;
+      } catch (err) {
+        if (this.isAbortError(err)) return;
+        if (attempt < 2) {
+          this.showRetrying();
+          await new Promise(r => setTimeout(r, 15_000));
+          continue;
+        }
+        this.error = err instanceof Error ? err.message : 'Failed to fetch events';
+        console.error('[TechEvents] Fetch error:', err);
+      }
     }
+    this.loading = false;
+    this.render();
   }
 
   protected render(): void {

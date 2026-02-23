@@ -1,6 +1,7 @@
 import './styles/main.css';
 import './styles/settings-window.css';
 import { RuntimeConfigPanel } from '@/components/RuntimeConfigPanel';
+import { WorldMonitorTab } from '@/components/WorldMonitorTab';
 import { RUNTIME_FEATURES, loadDesktopSecrets } from '@/services/runtime-config';
 import { tryInvokeTauri } from '@/services/tauri-bridge';
 import { escapeHtml } from '@/utils/sanitize';
@@ -80,11 +81,22 @@ async function initSettingsWindow(): Promise<void> {
   requestAnimationFrame(() => {
     document.documentElement.classList.remove('no-transition');
   });
-  await loadDesktopSecrets();
 
   const llmMount = document.getElementById('llmApp');
   const apiMount = document.getElementById('apiKeysApp');
+  const wmMount = document.getElementById('worldmonitorApp');
   if (!llmMount || !apiMount) return;
+
+  // Mount WorldMonitor tab immediately — it doesn't depend on secrets
+  const wmTab = new WorldMonitorTab();
+  if (wmMount) {
+    wmMount.innerHTML = '';
+    wmMount.appendChild(wmTab.getElement());
+  }
+
+  // Load secrets then refresh WorldMonitor tab to reflect actual key status
+  await loadDesktopSecrets();
+  wmTab.refresh();
 
   const llmPanel = new RuntimeConfigPanel({ mode: 'full', buffered: true, featureFilter: LLM_FEATURES });
   const apiPanel = new RuntimeConfigPanel({
@@ -98,29 +110,41 @@ async function initSettingsWindow(): Promise<void> {
 
   const panels = [llmPanel, apiPanel];
 
-  window.addEventListener('beforeunload', () => panels.forEach(p => p.destroy()));
+  window.addEventListener('beforeunload', () => {
+    panels.forEach(p => p.destroy());
+    wmTab.destroy();
+  });
 
   document.getElementById('okBtn')?.addEventListener('click', () => {
     void (async () => {
       try {
-        if (!panels.some(p => p.hasPendingChanges())) {
+        const hasWmChanges = wmTab.hasPendingChanges();
+        const dirtyPanels = panels.filter(p => p.hasPendingChanges());
+
+        if (dirtyPanels.length === 0 && !hasWmChanges) {
           closeSettingsWindow();
           return;
         }
-        setActionStatus(t('modals.settingsWindow.validating'), 'ok');
-        const missingRequired = panels.flatMap(p => p.getMissingRequiredSecrets());
-        if (missingRequired.length > 0) {
-          setActionStatus(`Missing required: ${missingRequired.join(', ')}`, 'error');
-          return;
+
+        if (hasWmChanges) await wmTab.save();
+
+        if (dirtyPanels.length > 0) {
+          setActionStatus(t('modals.settingsWindow.validating'), 'ok');
+          const missingRequired = dirtyPanels.flatMap(p => p.getMissingRequiredSecrets());
+          if (missingRequired.length > 0) {
+            setActionStatus(`Missing required: ${missingRequired.join(', ')}`, 'error');
+            return;
+          }
+          const allErrors = (await Promise.all(dirtyPanels.map(p => p.verifyPendingSecrets()))).flat();
+          await Promise.all(dirtyPanels.map(p => p.commitVerifiedSecrets()));
+          if (allErrors.length > 0) {
+            setActionStatus(t('modals.settingsWindow.verifyFailed', { errors: allErrors.join(', ') }), 'error');
+            return;
+          }
         }
-        const allErrors = (await Promise.all(panels.map(p => p.verifyPendingSecrets()))).flat();
-        await Promise.all(panels.map(p => p.commitVerifiedSecrets()));
-        if (allErrors.length > 0) {
-          setActionStatus(t('modals.settingsWindow.verifyFailed', { errors: allErrors.join(', ') }), 'error');
-        } else {
-          setActionStatus(t('modals.settingsWindow.saved'), 'ok');
-          closeSettingsWindow();
-        }
+
+        setActionStatus(t('modals.settingsWindow.saved'), 'ok');
+        closeSettingsWindow();
       } catch (err) {
         console.error('[settings] save error:', err);
         setActionStatus(t('modals.settingsWindow.failed', { error: String(err) }), 'error');

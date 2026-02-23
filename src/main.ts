@@ -24,7 +24,7 @@ Sentry.init({
     /NotAllowedError/,
     /InvalidAccessError/,
     /importScripts/,
-    /^TypeError: Load failed$/,
+    /^TypeError: Load failed( \(.*\))?$/,
     /^TypeError: Failed to fetch( \(.*\))?$/,
     /^TypeError: cancelled$/,
     /^TypeError: NetworkError/,
@@ -40,13 +40,13 @@ Sentry.init({
     /requestFullscreen/,
     /webkitEnterFullscreen/,
     /vc_text_indicators_context/,
-    /Program failed to link: null/,
+    /Program failed to link/,
     /too much recursion/,
     /zaloJSV2/,
     /Java bridge method invocation error/,
     /Could not compile fragment shader/,
     /can't redefine non-configurable property/,
-    /Can.t find variable: (CONFIG|currentInset)/,
+    /Can.t find variable: (CONFIG|currentInset|NP)/,
     /invalid origin/,
     /\.data\.split is not a function/,
     /signal is aborted without reason/,
@@ -59,14 +59,47 @@ Sentry.init({
     /Can't find variable: _0x/,
     /WKWebView was deallocated/,
     /Unexpected end of input/,
+    /window\.android\.\w+ is not a function/,
+    /Attempted to assign to readonly property/,
+    /Cannot assign to read only property/,
+    /FetchEvent\.respondWith/,
+    /e\.toLowerCase is not a function/,
+    /\.trim is not a function/,
+    /\.(indexOf|findIndex) is not a function/,
+    /QuotaExceededError/,
+    /^TypeError: 已取消$/,
+    /Maximum call stack size exceeded/,
+    /^fetchError: Network request failed$/,
+    /window\.ethereum/,
+    /^SyntaxError: Unexpected token/,
+    /^Operation timed out\.?$/,
+    /setting 'luma'/,
+    /ML request .* timed out/,
+    /^Element not found$/,
+    /^The operation was aborted\.?\s*$/,
+    /Unexpected end of script/,
+    /error loading dynamically imported module/,
+    /Style is not done loading/,
+    /Event `CustomEvent`.*captured as promise rejection/,
+    /getProgramInfoLog/,
+    /__firefox__/,
+    /ifameElement\.contentDocument/,
+    /Invalid video id/,
+    /Fetch is aborted/,
+    /Stylesheet append timeout/,
   ],
   beforeSend(event) {
     const msg = event.exception?.values?.[0]?.value ?? '';
     if (msg.length <= 3 && /^[a-zA-Z_$]+$/.test(msg)) return null;
     const frames = event.exception?.values?.[0]?.stacktrace?.frames ?? [];
     // Suppress maplibre internal null-access crashes (light, placement) only when stack is in map chunk
-    if (/this\.style\._layers|reading '_layers'|this\.light is null|can't access property "(id|type|setFilter)", \w+ is (null|undefined)|Cannot read properties of null \(reading '(id|type|setFilter|_layers)'\)|null is not an object \(evaluating '(E\.|this\.style)/.test(msg)) {
+    if (/this\.style\._layers|reading '_layers'|this\.light is null|can't access property "(id|type|setFilter)", \w+ is (null|undefined)|Cannot read properties of null \(reading '(id|type|setFilter|_layers)'\)|null is not an object \(evaluating '(E\.|this\.style)|^\w{1,2} is null$/.test(msg)) {
       if (frames.some(f => /\/map-[A-Za-z0-9]+\.js/.test(f.filename ?? ''))) return null;
+    }
+    // Suppress any TypeError that happens entirely within maplibre internals (no app code outside the map chunk)
+    if (/^TypeError:/.test(msg) && frames.length > 0) {
+      const appFrames = frames.filter(f => f.in_app && !/\/sentry-[A-Za-z0-9]+\.js/.test(f.filename ?? ''));
+      if (appFrames.length > 0 && appFrames.every(f => /\/map-[A-Za-z0-9]+\.js/.test(f.filename ?? ''))) return null;
     }
     return event;
   },
@@ -81,6 +114,7 @@ import { debugInjectTestEvents, debugGetCells, getCellCount } from '@/services/g
 import { initMetaTags } from '@/services/meta-tags';
 import { installRuntimeFetchPatch } from '@/services/runtime';
 import { loadDesktopSecrets } from '@/services/runtime-config';
+import { initAnalytics, trackApiKeysSnapshot } from '@/services/analytics';
 import { applyStoredTheme } from '@/utils/theme-manager';
 import { clearChunkReloadGuard, installChunkReloadGuard } from '@/bootstrap/chunk-reload';
 
@@ -90,12 +124,18 @@ const chunkReloadStorageKey = installChunkReloadGuard(__APP_VERSION__);
 // Initialize Vercel Analytics
 inject();
 
+// Initialize PostHog product analytics
+void initAnalytics();
+
 // Initialize dynamic meta tags for sharing
 initMetaTags();
 
 // In desktop mode, route /api/* calls to the local Tauri sidecar backend.
 installRuntimeFetchPatch();
-void loadDesktopSecrets();
+loadDesktopSecrets().then(async () => {
+  await initAnalytics();
+  trackApiKeysSnapshot();
+}).catch(() => {});
 
 // Apply stored theme preference before app initialization (safety net for inline script)
 applyStoredTheme();

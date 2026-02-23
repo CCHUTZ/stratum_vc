@@ -1209,6 +1209,9 @@
         "onStation": "På Station",
         "enRoute": "På väg"
       },
+      "health": {
+        "evidence": "HÄLSOBEVIS"
+      },
       "description": "Undervattens telekommunikationskabel för internationell internettrafik. Dessa fiberoptiska kablar utgör ryggraden i global internetanslutning och överför över 95 % av interkontinental data."
     },
     "repairShip": {
@@ -1660,6 +1663,7 @@
     "loading": "Laddar...",
     "error": "Ett fel inträffade",
     "updated": "Uppdaterad: {{time}}",
+    "retrying": "Försöker igen…",
     "failedToLoad": "Kunde inte ladda data",
     "noDataShort": "Inga data",
     "noDataAvailable": "Inga data tillgängliga",
@@ -1709,6 +1713,7 @@
     "close": "Stäng",
     "currentVariant": "(aktuell)",
     "retry": "Retry",
+    "retrying": "Försöker igen...",
     "refresh": "Refresh"
   },
   "header": {

@@ -1,3 +1,4 @@
+// Non-sebuf: returns XML/HTML, stays as standalone Vercel function
 import { getCorsHeaders, isDisallowedOrigin } from './_cors.js';
 
 export const config = { runtime: 'edge' };
@@ -176,6 +177,16 @@ const ALLOWED_DOMAINS = [
   'www.fao.org',
   'worldbank.org',
   'www.imf.org',
+  // Regional locale feeds (tr, pl, ru, th, vi)
+  'www.hurriyet.com.tr',
+  'tvn24.pl',
+  'www.polsatnews.pl',
+  'www.rp.pl',
+  'meduza.io',
+  'novayagazeta.eu',
+  'www.bangkokpost.com',
+  'vnexpress.net',
+  'www.abc.net.au',
   // Additional
   'news.ycombinator.com',
   // Finance variant
@@ -249,7 +260,7 @@ export default async function handler(req) {
             status: redirectResponse.status,
             headers: {
               'Content-Type': 'application/xml',
-              'Cache-Control': 'public, max-age=300, s-maxage=300, stale-while-revalidate=60',
+              'Cache-Control': 'public, max-age=300, s-maxage=600, stale-while-revalidate=300',
               ...corsHeaders,
             },
           });
@@ -267,7 +278,7 @@ export default async function handler(req) {
       status: response.status,
       headers: {
         'Content-Type': 'application/xml',
-        'Cache-Control': 'public, max-age=300, s-maxage=300, stale-while-revalidate=60',
+        'Cache-Control': 'public, max-age=600, s-maxage=600, stale-while-revalidate=300',
         ...corsHeaders,
       },
     });

@@ -19,6 +19,7 @@ import { invokeTauri } from '@/services/tauri-bridge';
 import { escapeHtml } from '@/utils/sanitize';
 import { isDesktopRuntime } from '@/services/runtime';
 import { t } from '@/services/i18n';
+import { trackFeatureToggle } from '@/services/analytics';
 
 const SIGNUP_URLS: Partial<Record<RuntimeSecretKey, string>> = {
   GROQ_API_KEY: 'https://console.groq.com/keys',
@@ -191,6 +192,11 @@ export class RuntimeConfigPanel extends Panel {
       if (!key) return;
       const raw = input.value.trim();
       if (!raw || raw === MASKED_SENTINEL) return;
+      // Skip plaintext keys whose value hasn't changed from stored value
+      if (PLAINTEXT_KEYS.has(key) && !this.pendingSecrets.has(key)) {
+        const stored = getRuntimeConfigSnapshot().secrets[key]?.value || '';
+        if (raw === stored) return;
+      }
       this.pendingSecrets.set(key, raw);
       const result = validateSecret(key, raw);
       if (!result.valid) {
@@ -238,6 +244,7 @@ export class RuntimeConfigPanel extends Panel {
           <p>
             ${availableFeatures}/${totalFeatures} ${t('modals.runtimeConfig.summary.available')}${configuredCount > 0 ? ` · ${configuredCount} ${t('modals.runtimeConfig.summary.secrets')}` : ''}.
           </p>
+          <p class="runtime-alert-skip">${t('modals.runtimeConfig.skipSetup')}</p>
           <button type="button" class="runtime-open-settings-btn" data-open-settings>
             ${t('modals.runtimeConfig.openSettings')}
           </button>
@@ -387,6 +394,7 @@ export class RuntimeConfigPanel extends Panel {
       input.addEventListener('change', () => {
         const featureId = input.dataset.toggle as RuntimeFeatureDefinition['id'] | undefined;
         if (!featureId) return;
+        trackFeatureToggle(featureId, input.checked);
         setFeatureToggle(featureId, input.checked);
       });
     });
@@ -457,6 +465,19 @@ export class RuntimeConfigPanel extends Panel {
             }
           }
           this.updateFeatureCardStatus(key);
+
+          // Update inline status text to reflect staged state
+          const statusEl = input.closest('.runtime-secret-row')?.querySelector('.runtime-secret-status');
+          if (statusEl) {
+            statusEl.textContent = result.valid ? t('modals.runtimeConfig.status.staged') : t('modals.runtimeConfig.status.invalid');
+            statusEl.className = `runtime-secret-status ${result.valid ? 'staged' : 'warn'}`;
+          }
+
+          // When Ollama URL is staged, auto-fetch available models
+          if (key === 'OLLAMA_API_URL' && result.valid) {
+            const modelSelect = this.content.querySelector<HTMLSelectElement>('select[data-model-select]');
+            if (modelSelect) void this.fetchOllamaModels(modelSelect);
+          }
         } else {
           void setSecretValue(key, raw);
           input.value = '';

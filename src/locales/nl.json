@@ -1209,6 +1209,9 @@
         "onStation": "Op station",
         "enRoute": "Onderweg"
       },
+      "health": {
+        "evidence": "GEZONDHEIDSBEWIJS"
+      },
       "description": "Onderzeese telecommunicatiekabel voor internationaal internetverkeer. Deze glasvezelkabels vormen de ruggengraat van de wereldwijde internetconnectiviteit en verzenden meer dan 95% van de intercontinentale gegevens."
     },
     "repairShip": {
@@ -1660,6 +1663,7 @@
     "loading": "Laden...",
     "error": "Er is een fout opgetreden",
     "updated": "Bijgewerkt: {{time}}",
+    "retrying": "Opnieuw proberen…",
     "failedToLoad": "Laden van gegevens mislukt",
     "noDataShort": "Geen gegevens",
     "noDataAvailable": "Geen gegevens beschikbaar",
@@ -1709,6 +1713,7 @@
     "close": "Sluiten",
     "currentVariant": "(huidig)",
     "retry": "Retry",
+    "retrying": "Opnieuw proberen...",
     "refresh": "Refresh"
   },
   "header": {
