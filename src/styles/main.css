@@ -14187,3 +14187,71 @@ body.has-critical-banner .panels-grid {
     grid-row: unset !important;
   }
 }
+
+/* ----------------------------------------------------------
+   Intelligence Brief Panel
+   ---------------------------------------------------------- */
+
+.intelligence-brief-container {
+  font-family: 'SF Mono', Monaco, monospace;
+  color: #e0e8ff;
+}
+
+.ib-region-block {
+  border-left: 2px solid #1a3a6e;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+}
+
+.ib-region-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.ib-region-name {
+  font-weight: bold;
+  color: #4a9eff;
+}
+
+.ib-region-overall {
+  color: #00ff88;
+  font-size: 1.1em;
+}
+
+.ib-lens-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 3px 0;
+  font-size: 0.8em;
+}
+
+.ib-lens-label {
+  width: 140px;
+  color: #8899bb;
+}
+
+.ib-lens-bar-container {
+  flex: 1;
+  background: #0a1628;
+  height: 6px;
+  border-radius: 3px;
+}
+
+.ib-lens-bar {
+  height: 100%;
+  border-radius: 3px;
+}
+
+.ib-lens-score {
+  width: 30px;
+  text-align: right;
+  color: #ccd6f6;
+}
+
+.ib-dominant-lens {
+  font-size: 0.75em;
+  color: #4a9eff;
+  margin-top: 4px;
+}
