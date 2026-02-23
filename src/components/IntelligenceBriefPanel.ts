@@ -17,7 +17,29 @@ export class IntelligenceBriefPanel extends Panel {
       <div class="intelligence-brief-container">
         <div class="ib-alerts">
           <h3>🔴 Critical Alerts (24h)</h3>
-          <div class="ib-alerts-content">Priority events with civilizational scoring</div>
+          <div class="ib-alerts-content">
+            ${
+              ALL_STRATUM_LOCATIONS
+                .filter(loc => loc.intensity >= 4)
+                .sort((a, b) => b.intensity - a.intensity)
+                .slice(0, 5)
+                .map(alert => `
+                  <div class="ib-alert-item">
+                    <div class="ib-alert-header">
+                      <span class="ib-alert-name">${alert.name}</span>
+                      <span class="ib-alert-intensity" style="background: hsl(${(5-alert.intensity)*12}, 70%, 50%);">
+                        🔴 ${alert.intensity}/5
+                      </span>
+                    </div>
+                    <div class="ib-alert-meta">
+                      <span class="ib-alert-region">${alert.region}</span>
+                      <span class="ib-alert-lens">${alert.primaryLens.replace(/_/g, ' ')}</span>
+                    </div>
+                    <div class="ib-alert-phase">${alert.predictedPhase || 'Monitoring'}</div>
+                  </div>
+                `).join('')
+            }
+          </div>
         </div>
 
         <div class="ib-scoring">
@@ -53,32 +75,86 @@ export class IntelligenceBriefPanel extends Panel {
 
         <div class="ib-jihad">
           <h3>🎯 Jihad Observatory</h3>
-          <div class="ib-jihad-content">Active cells / Ideological expansion / Resistance index</div>
+          <div class="ib-section-placeholder">
+            <p class="ib-placeholder-subtitle">Active cells / Ideological expansion / Resistance index</p>
+            <div class="ib-placeholder-content">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+              </svg>
+              <span>Coming in Phase 5</span>
+            </div>
+          </div>
         </div>
 
         <div class="ib-burning-man">
           <h3>🔥 Burning Man Layer</h3>
-          <div class="ib-burning-man-content">Mystical network activity / Key nodes / Political intersections</div>
+          <div class="ib-section-placeholder">
+            <p class="ib-placeholder-subtitle">Mystical network activity / Key nodes / Political intersections</p>
+            <div class="ib-placeholder-content">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+              </svg>
+              <span>Coming in Phase 5</span>
+            </div>
+          </div>
         </div>
 
         <div class="ib-predictions">
           <h3>🔮 Predictions (30-90 days)</h3>
-          <div class="ib-predictions-content">Probability-based, per region, per lens</div>
+          <div class="ib-section-placeholder">
+            <p class="ib-placeholder-subtitle">Probability-based, per region, per lens</p>
+            <div class="ib-placeholder-content">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+              </svg>
+              <span>Coming in Phase 5</span>
+            </div>
+          </div>
         </div>
 
         <div class="ib-map">
           <h3>🗺️ Map — Civilizational Friction Heat Map</h3>
-          <div class="ib-map-content">Sacred sites / Friction zones / Active cells</div>
+          <div class="ib-section-placeholder">
+            <p class="ib-placeholder-subtitle">Sacred sites / Friction zones / Active cells</p>
+            <div class="ib-placeholder-content">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+              </svg>
+              <span>Coming in Phase 5</span>
+            </div>
+          </div>
         </div>
 
         <div class="ib-cameras">
           <h3>📹 Live Cameras — Critical Points</h3>
-          <div class="ib-cameras-content">Western Wall / Ayodhya / Zócalo / Tulum</div>
+          <div class="ib-section-placeholder">
+            <p class="ib-placeholder-subtitle">Western Wall / Ayodhya / Zócalo / Tulum</p>
+            <div class="ib-placeholder-content">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+              </svg>
+              <span>Coming in Phase 5</span>
+            </div>
+          </div>
         </div>
 
         <div class="ib-feeds">
           <h3>📰 Feeds — Classified by Narrative</h3>
-          <div class="ib-feeds-content">Pro-state / Opposition / Religious / Mystical</div>
+          <div class="ib-section-placeholder">
+            <p class="ib-placeholder-subtitle">Pro-state / Opposition / Religious / Mystical</p>
+            <div class="ib-placeholder-content">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+              </svg>
+              <span>Coming in Phase 5</span>
+            </div>
+          </div>
         </div>
       </div>
     `;
