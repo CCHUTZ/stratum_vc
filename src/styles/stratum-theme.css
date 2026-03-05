@@ -39,3 +39,8 @@
   --map-country: #0a1830;
   --map-stroke: #1a3060;
 }
+
+/* Force Intelligence Brief to full width */
+#panel-stratum-civilizational {
+  grid-column: span 4 !important;
+}
