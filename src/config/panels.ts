@@ -374,7 +374,7 @@ const FINANCE_MOBILE_MAP_LAYERS: MapLayers = {
 const STRATUM_PANELS: Record<string, PanelConfig> = {
   map: { name: 'Civilizational Map', enabled: true, priority: 1 },
   'live-news': { name: 'Civilizational News', enabled: false, priority: 1 },
-  insights: { name: 'Five Lenses Analysis', enabled: true, priority: 1 },
+  insights: { name: 'Five Lenses Analysis', enabled: false, priority: 1 },
   'stratum-civilizational': { name: 'Civilizational Analysis', enabled: true, priority: 2 },
   stratum_tier1: { name: 'Core Analysis Feeds', enabled: true, priority: 1 },
   middle_east: { name: 'Middle East', enabled: true, priority: 2 },
@@ -384,7 +384,7 @@ const STRATUM_PANELS: Record<string, PanelConfig> = {
   latam_regional: { name: 'LATAM Regional', enabled: true, priority: 2 },
   europe: { name: 'Europe & Balkans', enabled: true, priority: 2 },
   specialized: { name: 'Think Tanks & Analysis', enabled: true, priority: 2 },
-  monitors: { name: 'My Monitors', enabled: true, priority: 2 },
+  monitors: { name: 'My Monitors', enabled: false, priority: 2 },
 };
 
 const STRATUM_MAP_LAYERS: MapLayers = {
