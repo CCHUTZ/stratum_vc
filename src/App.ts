@@ -57,6 +57,10 @@ import {
   StatusPanel,
   EconomicPanel,
   IntelligenceBriefPanel,
+  CriticalAlertsPanel,
+  CivilizationalScoringPanel,
+  JAObservatoryPanel,
+  AIInsightsStratumPanel,
   SearchModal,
   MobileWarningModal,
   PizzIntIndicator,
@@ -2249,6 +2253,19 @@ export class App {
 
     const intelligenceBriefPanel = new IntelligenceBriefPanel();
     this.panels['stratum-civilizational'] = intelligenceBriefPanel;
+
+    // STRATUM Phase 6 Panels
+    const criticalAlertsPanel = new CriticalAlertsPanel();
+    this.panels['stratum-critical-alerts'] = criticalAlertsPanel;
+
+    const civilizationalScoringPanel = new CivilizationalScoringPanel();
+    this.panels['stratum-scoring'] = civilizationalScoringPanel;
+
+    const jaObservatoryPanel = new JAObservatoryPanel();
+    this.panels['stratum-ja-observatory'] = jaObservatoryPanel;
+
+    const aiInsightsPanel = new AIInsightsStratumPanel();
+    this.panels['stratum-ai-insights'] = aiInsightsPanel;
 
     // New Regional Panels
     const africaPanel = new NewsPanel('africa', t('panels.africa'));
