@@ -1,0 +1,41 @@
+/* ============================================================
+   STRATUM Theme — Civilizational Intelligence Observatory
+   Deep Navy War Room Identity
+   ============================================================
+
+   This file overrides worldmonitor's CSS variables with
+   STRATUM's proprietary color palette. Imported AFTER main.css
+   to establish visual hierarchy distinct from the parent project.
+
+   ============================================================ */
+
+:root {
+  /* Backgrounds — Deep Navy War Room */
+  --bg: #050d1a;
+  --bg-secondary: #070f1e;
+  --surface: #0a1628;
+  --surface-hover: #0d1e38;
+  --surface-active: #112040;
+
+  /* Panels & UI Containers */
+  --panel-bg: #080e1c;
+  --panel-border: #1a3a6e;
+
+  /* Accent Color — Primary Brand Blue */
+  --accent: #4a9eff;
+
+  /* Borders */
+  --border: #1a3a6e;
+  --border-strong: #2a4a8e;
+  --border-subtle: #0d1e38;
+
+  /* Text — High Contrast on Deep Navy */
+  --text: #e0e8ff;
+  --text-secondary: #8899bb;
+  --text-dim: #4a5a7a;
+
+  /* Map Visualization */
+  --map-bg: #030810;
+  --map-country: #0a1830;
+  --map-stroke: #1a3060;
+}

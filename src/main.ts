@@ -1,4 +1,5 @@
 import './styles/main.css';
+import './styles/stratum-theme.css';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import * as Sentry from '@sentry/browser';
 import { inject } from '@vercel/analytics';
