@@ -373,7 +373,7 @@ const FINANCE_MOBILE_MAP_LAYERS: MapLayers = {
 // ============================================
 const STRATUM_PANELS: Record<string, PanelConfig> = {
   map: { name: 'Civilizational Map', enabled: true, priority: 1 },
-  'live-news': { name: 'Civilizational News', enabled: true, priority: 1 },
+  'live-news': { name: 'Civilizational News', enabled: false, priority: 1 },
   insights: { name: 'Five Lenses Analysis', enabled: true, priority: 1 },
   'stratum-civilizational': { name: 'Civilizational Analysis', enabled: true, priority: 2 },
   stratum_tier1: { name: 'Core Analysis Feeds', enabled: true, priority: 1 },
