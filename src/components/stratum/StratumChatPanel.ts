@@ -1,10 +1,5 @@
 import { Panel } from '../Panel';
-
-interface LensAnalysis {
-  lens: string;
-  score: number;
-  analysis: string;
-}
+import { analyzeWithStratum, type StratumLensResult } from '@/services/stratum-analysis';
 
 export class StratumChatPanel extends Panel {
   private textarea: HTMLTextAreaElement | null = null;
@@ -213,7 +208,7 @@ export class StratumChatPanel extends Panel {
     }
   }
 
-  private handleAnalyze(): void {
+  private async handleAnalyze(): Promise<void> {
     const input = (this.textarea?.value || '').trim();
 
     if (!input) {
@@ -223,157 +218,103 @@ export class StratumChatPanel extends Panel {
       return;
     }
 
-    const lensResults = this.generateMockAnalysis(input);
-    this.renderAnalysisResults(input, lensResults);
+    // Disable button and show analyzing state
+    if (this.analyzeButton) {
+      this.analyzeButton.disabled = true;
+      this.analyzeButton.textContent = 'ANALYZING...';
+    }
+
+    if (this.responseArea) {
+      this.responseArea.innerHTML = '<div class="stratum-analysis-result" style="opacity: 0.6;"><div style="text-align: center; padding: 20px; color: var(--text-dim);">Connecting to STRATUM analysis service...</div></div>';
+    }
+
+    try {
+      // Detect region from keywords
+      const detectedRegion = this.detectRegion(input);
+
+      // Call real GROQ analysis
+      const result = await analyzeWithStratum(input, detectedRegion);
+
+      if (this.analyzeButton) {
+        this.analyzeButton.disabled = false;
+        this.analyzeButton.textContent = 'ANALYZE';
+      }
+
+      // Render results with provider badge
+      this.renderAnalysisResults(input, result.lenses, result.provider);
+    } catch (error) {
+      console.error('[StratumChatPanel] Analysis error:', error);
+
+      if (this.analyzeButton) {
+        this.analyzeButton.disabled = false;
+        this.analyzeButton.textContent = 'ANALYZE';
+      }
+
+      if (this.responseArea) {
+        this.responseArea.innerHTML = `
+          <div class="stratum-analysis-result" style="border-color: #ff4444;">
+            <div style="color: #ff4444; font-family: var(--font-mono); font-size: 12px; margin-bottom: 8px;">
+              ⚠ Analysis Error
+            </div>
+            <div style="color: var(--text-secondary); font-size: 12px; line-height: 1.5;">
+              ${this.escapeHtml(error instanceof Error ? error.message : 'Unknown error occurred')}
+            </div>
+          </div>
+        `;
+      }
+    }
   }
 
-  private generateMockAnalysis(input: string): LensAnalysis[] {
+  private detectRegion(input: string): string | undefined {
     const inputLower = input.toLowerCase();
 
-    // Base scores (1-10 for each lens)
-    let scores = {
-      identity_sacred: 4,
-      demographic: 5,
-      humiliation: 5,
-      religious_networks: 4,
-      civilizational: 6,
-      cognitive_warfare: 5,
-    };
-
-    // Keyword-based adjustments
-    if (inputLower.includes('israel') || inputLower.includes('jerusalem') || inputLower.includes('haredi')) {
-      scores.religious_networks = 9;
-      scores.identity_sacred = 8;
-      scores.humiliation = 7;
-      scores.cognitive_warfare = 8;
+    if (inputLower.includes('israel') || inputLower.includes('jerusalem') || inputLower.includes('palestine')) {
+      return 'Israel/Palestine';
     }
-
     if (inputLower.includes('india') || inputLower.includes('hindu') || inputLower.includes('modi')) {
-      scores.identity_sacred = 9;
-      scores.demographic = 8;
-      scores.religious_networks = 7;
-      scores.civilizational = 8;
+      return 'India';
     }
-
     if (inputLower.includes('mexico') || inputLower.includes('amlo') || inputLower.includes('cartel')) {
-      scores.humiliation = 8;
-      scores.demographic = 7;
-      scores.cognitive_warfare = 7;
-      scores.civilizational = 6;
+      return 'Mexico';
+    }
+    if (inputLower.includes('ukraine') || inputLower.includes('russia') || inputLower.includes('putin')) {
+      return 'Ukraine/Russia';
+    }
+    if (inputLower.includes('china') || inputLower.includes('taiwan') || inputLower.includes('xi')) {
+      return 'China/Taiwan';
+    }
+    if (inputLower.includes('iran') || inputLower.includes('saudi') || inputLower.includes('yemen')) {
+      return 'Middle East';
     }
 
-    if (inputLower.includes('ukraine') || inputLower.includes('russia')) {
-      scores.civilizational = 9;
-      scores.humiliation = 8;
-      scores.cognitive_warfare = 9;
-      scores.demographic = 6;
-    }
-
-    if (inputLower.includes('china') || inputLower.includes('taiwan')) {
-      scores.identity_sacred = 7;
-      scores.civilizational = 9;
-      scores.demographic = 8;
-      scores.religious_networks = 3;
-    }
-
-    return [
-      {
-        lens: 'Sacred Identity',
-        score: this.clamp(scores.identity_sacred),
-        analysis: this.getAnalysisText('identity_sacred', inputLower, scores.identity_sacred)
-      },
-      {
-        lens: 'Demographic',
-        score: this.clamp(scores.demographic),
-        analysis: this.getAnalysisText('demographic', inputLower, scores.demographic)
-      },
-      {
-        lens: 'Humiliation',
-        score: this.clamp(scores.humiliation),
-        analysis: this.getAnalysisText('humiliation', inputLower, scores.humiliation)
-      },
-      {
-        lens: 'Religious Networks',
-        score: this.clamp(scores.religious_networks),
-        analysis: this.getAnalysisText('religious_networks', inputLower, scores.religious_networks)
-      },
-      {
-        lens: 'Civilizational',
-        score: this.clamp(scores.civilizational),
-        analysis: this.getAnalysisText('civilizational', inputLower, scores.civilizational)
-      },
-      {
-        lens: 'Cognitive Warfare',
-        score: this.clamp(scores.cognitive_warfare),
-        analysis: this.getAnalysisText('cognitive_warfare', inputLower, scores.cognitive_warfare)
-      },
-    ];
+    return undefined;
   }
 
-  private getAnalysisText(lens: string, _input: string, score: number): string {
-    const analyses: Record<string, string[]> = {
-      identity_sacred: [
-        'High religious/sacred identity involvement detected.',
-        'Sacred sites and identity markers present.',
-        'Minimal sacred identity dimension.',
-      ],
-      demographic: [
-        'Significant demographic shifts and migration patterns.',
-        'Population dynamics affecting regional stability.',
-        'Limited demographic component.',
-      ],
-      humiliation: [
-        'Strong historical grievances and trauma narratives.',
-        'Moderate historical trauma influence.',
-        'Low humiliation/grievance dimension.',
-      ],
-      religious_networks: [
-        'Transnational religious networks highly active.',
-        'Religious network influence moderate.',
-        'Minimal transnational religious coordination.',
-      ],
-      civilizational: [
-        'Major civilizational friction and clash dynamics.',
-        'Moderate inter-civilizational tension.',
-        'Limited civilizational conflict dimension.',
-      ],
-      cognitive_warfare: [
-        'Intensive information warfare and narrative control.',
-        'Moderate cognitive warfare activity.',
-        'Limited narrative warfare dimension.',
-      ],
-    };
-
-    const texts = analyses[lens] || ['Analysis data unavailable.'];
-    const index = Math.max(0, Math.min(2, score <= 3 ? 2 : score <= 6 ? 1 : 0));
-    return texts[index] ?? 'Analysis data unavailable.';
-  }
-
-  private clamp(value: number): number {
-    return Math.max(1, Math.min(10, value));
-  }
-
-  private renderAnalysisResults(input: string, results: LensAnalysis[]): void {
+  private renderAnalysisResults(input: string, lenses: StratumLensResult[], provider: string): void {
     if (!this.responseArea) return;
 
     const resultHtml = `
       <div class="stratum-analysis-result">
         <div style="margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border-subtle);">
           <div style="color: var(--text-dim); font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Input Analysis</div>
-          <div style="color: var(--text-secondary); font-family: var(--font-mono); font-size: 12px; line-height: 1.4;">"${this.escapeHtml(input)}"</div>
+          <div style="color: var(--text-secondary); font-family: var(--font-mono); font-size: 12px; line-height: 1.4; margin-bottom: 8px;">"${this.escapeHtml(input)}"</div>
+          <div style="display: flex; gap: 6px; align-items: center; font-size: 10px; color: var(--text-dim);">
+            <span style="text-transform: uppercase; letter-spacing: 0.05em;">Provider:</span>
+            <span style="font-family: var(--font-mono); color: var(--accent);">${this.escapeHtml(provider)}</span>
+          </div>
         </div>
 
         <div class="stratum-lens-grid">
-          ${results.map(result => `
+          ${lenses.map(lens => `
             <div class="stratum-lens-card">
               <div class="stratum-lens-header">
-                <div class="stratum-lens-name">${result.lens}</div>
-                <div class="stratum-lens-score">${result.score}/10</div>
+                <div class="stratum-lens-name">${this.escapeHtml(lens.name)}</div>
+                <div class="stratum-lens-score">${lens.score}/10</div>
               </div>
               <div class="stratum-score-bar">
-                <div class="stratum-score-fill" style="width: ${result.score * 10}%;"></div>
+                <div class="stratum-score-fill" style="width: ${lens.score * 10}%;"></div>
               </div>
-              <div class="stratum-lens-analysis">${result.analysis}</div>
+              <div class="stratum-lens-analysis">${this.escapeHtml(lens.analysis)}</div>
             </div>
           `).join('')}
         </div>
