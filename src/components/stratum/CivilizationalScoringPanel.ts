@@ -13,13 +13,13 @@ export class CivilizationalScoringPanel extends Panel {
   }
 
   private render(): void {
-    const regions = ['Mexico', 'Israel', 'India', 'Brazil', 'United States'];
+    const regions = ['Mexico', 'Israel', 'India', 'Brazil', 'USA'];
     const emojis: Record<string, string> = {
       Mexico: '🇲🇽',
       Israel: '🇮🇱',
       India: '🇮🇳',
       Brazil: '🇧🇷',
-      'United States': '🇺🇸',
+      USA: '🇺🇸',
     };
 
     const countriesHtml = regions
