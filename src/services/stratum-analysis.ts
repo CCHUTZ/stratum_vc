@@ -27,10 +27,100 @@ const LENSES = [
 ];
 
 /**
+ * Detect region from input keywords
+ * Matches common geopolitical regions and terms
+ */
+function detectRegionFromInput(input: string): string | undefined {
+  const inputLower = input.toLowerCase();
+
+  // Middle East & South Asia
+  if (inputLower.match(/\b(israel|palestine|gaza|jerusalem|west bank|hamas|hezbollah|idf)\b/)) {
+    return 'Israel/Palestine';
+  }
+  if (inputLower.match(/\b(iran|tehran|yemen|houthi|saudi|gulf|persian)\b/)) {
+    return 'Middle East';
+  }
+  if (inputLower.match(/\b(india|delhi|mumbai|hindu|modi|bjp|pakistan|kashmir|kashmir)\b/)) {
+    return 'India/South Asia';
+  }
+
+  // Europe & Eastern Europe
+  if (inputLower.match(/\b(ukraine|kyiv|russian|putin|moscow|donetsk|crimea)\b/)) {
+    return 'Ukraine/Russia';
+  }
+  if (inputLower.match(/\b(nato|europe|eu|germany|france|poland)\b/)) {
+    return 'Europe';
+  }
+
+  // Asia Pacific
+  if (inputLower.match(/\b(china|beijing|taiwan|xi|prc|hong kong|uyghur|xinjiang)\b/)) {
+    return 'China/Taiwan';
+  }
+  if (inputLower.match(/\b(korea|north korea|south korea|pyongyang|seoul|kim jong)\b/)) {
+    return 'Korea';
+  }
+  if (inputLower.match(/\b(japan|tokyo|philippines|philippines|vietnam|thailand|myanmar)\b/)) {
+    return 'East Asia';
+  }
+
+  // Americas
+  if (inputLower.match(/\b(mexico|amlo|cartel|narco|border)\b/)) {
+    return 'Mexico';
+  }
+  if (inputLower.match(/\b(cuba|venezuela|nicaragua|latin america|americas)\b/)) {
+    return 'Latin America';
+  }
+  if (inputLower.match(/\b(usa|united states|washington|congress|domestic)\b/)) {
+    return 'United States';
+  }
+
+  // Africa
+  if (inputLower.match(/\b(africa|nigerian|sudan|ethiopia|mali|congo)\b/)) {
+    return 'Africa';
+  }
+
+  return undefined;
+}
+
+/**
+ * Normalize lens name to match canonical six lenses
+ */
+function normalizeLensName(name: string): string {
+  const lower = name.toLowerCase().trim();
+
+  // Map common variations to canonical names
+  const mappings: Record<string, string> = {
+    'sacred': 'Sacred Identity',
+    'sacred identity': 'Sacred Identity',
+    'demographic': 'Demographic',
+    'humiliation': 'Humiliation',
+    'religious': 'Religious Networks',
+    'religious networks': 'Religious Networks',
+    'civilizational': 'Civilizational',
+    'cognitive': 'Cognitive Warfare',
+    'cognitive warfare': 'Cognitive Warfare',
+  };
+
+  // Try exact match first
+  if (mappings[lower]) {
+    return mappings[lower];
+  }
+
+  // Try substring match
+  for (const [key, canonical] of Object.entries(mappings)) {
+    if (lower.includes(key) || key.includes(lower)) {
+      return canonical;
+    }
+  }
+
+  return name; // Return original if no match
+}
+
+/**
  * Analyze a geopolitical event or phenomenon through STRATUM's six-lens framework
  * Calls Groq API directly via fetch (client-side)
  * @param input Event description or geopolitical phenomenon
- * @param region Optional region for geographic context (default: 'Global')
+ * @param region Optional region for geographic context (auto-detected if not provided)
  */
 export async function analyzeWithStratum(
   input: string,
@@ -40,7 +130,9 @@ export async function analyzeWithStratum(
     return getMockFallback('Global');
   }
 
-  const geoContext = region ?? 'Global';
+  // Auto-detect region from input if not provided
+  const detectedRegion = region || detectRegionFromInput(input);
+  const geoContext = detectedRegion ?? 'Global';
   const apiKey = import.meta.env.VITE_GROQ_API_KEY;
 
   // Fallback to mock if no API key
@@ -154,13 +246,14 @@ function parseLensesFromSummary(summary: string): StratumLensResult[] {
       const analysisMatch = analysisMatches[i];
       if (!scoreMatch || !analysisMatch) continue;
 
-      const lensName = scoreMatch[1]?.trim();
+      const rawLensName = scoreMatch[1]?.trim();
+      const normalizedName = rawLensName ? normalizeLensName(rawLensName) : undefined;
       const score = Math.max(1, Math.min(10, parseInt(scoreMatch[2] || '5') || 5));
       const analysis = analysisMatch[1]?.trim() || 'Analysis unavailable';
 
-      if (lensName) {
+      if (normalizedName) {
         lenses.push({
-          name: lensName,
+          name: normalizedName,
           score,
           analysis,
         });
