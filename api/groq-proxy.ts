@@ -8,10 +8,15 @@ export default async function handler(req: Request) {
     });
   }
 
-  // Check API key
-  const apiKey = process.env.GROQ_API_KEY;
-  if (!apiKey) {
-    return new Response(JSON.stringify({ error: 'GROQ_API_KEY not configured' }), {
+  // Get API key from environment (Vercel Edge compatible)
+  const apiKey = process.env.GROQ_API_KEY || '';
+
+  if (!apiKey || apiKey.length === 0) {
+    console.error('[GROQ-PROXY] GROQ_API_KEY missing. Available env keys:', Object.keys(process.env).filter(k => k.includes('GROQ') || k.includes('API')));
+    return new Response(JSON.stringify({
+      error: 'GROQ_API_KEY not configured',
+      debug: { hasKey: !!apiKey, keyLength: apiKey?.length ?? 0 }
+    }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }
     });
