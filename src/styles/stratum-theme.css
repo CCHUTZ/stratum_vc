@@ -227,7 +227,8 @@ body.variant-stratum .live-indicator {
   box-shadow: 0 0 8px rgba(74, 158, 255, 0.2);
 }
 
-.ij-save-btn {
+.ij-save-btn,
+.ij-analyze-btn {
   background: var(--accent);
   color: var(--bg);
   border: none;
@@ -242,14 +243,21 @@ body.variant-stratum .live-indicator {
   transition: all 0.2s ease;
 }
 
-.ij-save-btn:hover {
+.ij-save-btn:hover,
+.ij-analyze-btn:hover {
   opacity: 0.9;
   transform: translateY(-1px);
 }
 
-.ij-save-btn:active {
+.ij-save-btn:active,
+.ij-analyze-btn:active {
   transform: translateY(0);
   opacity: 0.8;
+}
+
+.ij-analyze-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .ij-notes-list {

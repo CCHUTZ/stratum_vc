@@ -1,9 +1,12 @@
 /**
  * Intelligence Journal Panel
  * Personal notes for STRATUM analysis with localStorage persistence
+ * Integrated with Knowledge Base and Groq analysis
  */
 
 import { Panel } from '../Panel';
+import { StratumModal } from './StratumModal';
+import { analyzeJournalWithKB, type JournalAnalysisResult } from '@/services/journal-analysis';
 
 interface JournalNote {
   id: string;
@@ -14,6 +17,8 @@ interface JournalNote {
 export class IntelligenceJournalPanel extends Panel {
   private notes: JournalNote[] = [];
   private textarea: HTMLTextAreaElement | null = null;
+  private modal: StratumModal;
+  private isAnalyzing = false;
 
   constructor() {
     super({
@@ -21,6 +26,7 @@ export class IntelligenceJournalPanel extends Panel {
       title: '📓 INTELLIGENCE JOURNAL',
       showCount: false,
     });
+    this.modal = new StratumModal();
     this.loadNotes();
     this.render();
   }
@@ -67,7 +73,10 @@ export class IntelligenceJournalPanel extends Panel {
             placeholder="Add intelligence note..."
             rows="2"
           ></textarea>
-          <button class="ij-save-btn" id="ijSaveBtn">SAVE NOTE</button>
+          <div style="display: flex; gap: 8px; margin-top: 8px;">
+            <button class="ij-save-btn" id="ijSaveBtn">SAVE NOTE</button>
+            <button class="ij-analyze-btn" id="ijAnalyzeBtn" ${this.notes.length === 0 ? 'disabled' : ''}>📊 ANALYZE</button>
+          </div>
         </div>
 
         <div class="ij-notes-list">
@@ -82,9 +91,10 @@ export class IntelligenceJournalPanel extends Panel {
 
   private attachEventListeners(): void {
     setTimeout(() => {
-      this.textarea = this.element.querySelector('.ij-textarea') as HTMLTextAreaElement;
-      const saveBtn = this.element.querySelector('#ijSaveBtn') as HTMLButtonElement;
-      const deleteButtons = this.element.querySelectorAll('.ij-note-delete');
+      this.textarea = this.element?.querySelector('.ij-textarea') as HTMLTextAreaElement;
+      const saveBtn = this.element?.querySelector('#ijSaveBtn') as HTMLButtonElement;
+      const analyzeBtn = this.element?.querySelector('#ijAnalyzeBtn') as HTMLButtonElement;
+      const deleteButtons = this.element?.querySelectorAll('.ij-note-delete');
 
       if (saveBtn) {
         saveBtn.addEventListener('click', () => this.saveNote());
@@ -97,7 +107,11 @@ export class IntelligenceJournalPanel extends Panel {
         }
       }
 
-      deleteButtons.forEach(btn => {
+      if (analyzeBtn && !this.isAnalyzing) {
+        analyzeBtn.addEventListener('click', () => this.analyzeNotes());
+      }
+
+      deleteButtons?.forEach(btn => {
         btn.addEventListener('click', (e) => {
           const id = (e.currentTarget as HTMLElement).getAttribute('data-id');
           if (id) {
@@ -129,6 +143,77 @@ export class IntelligenceJournalPanel extends Panel {
     this.notes = this.notes.filter(n => n.id !== id);
     this.saveNotes();
     this.render();
+  }
+
+  private async analyzeNotes(): Promise<void> {
+    if (this.notes.length === 0) return;
+    if (this.isAnalyzing) return;
+
+    this.isAnalyzing = true;
+    const analyzeBtn = this.element?.querySelector('#ijAnalyzeBtn') as HTMLButtonElement;
+    if (analyzeBtn) {
+      analyzeBtn.textContent = '⏳ ANALYZING...';
+      analyzeBtn.disabled = true;
+    }
+
+    try {
+      const noteTexts = this.notes.map(n => n.text);
+      const analysis = await analyzeJournalWithKB(noteTexts);
+      this.showAnalysisModal(analysis);
+    } catch (error) {
+      console.error('[IntelligenceJournal] Analysis failed:', error);
+    } finally {
+      this.isAnalyzing = false;
+      if (analyzeBtn) {
+        analyzeBtn.textContent = '📊 ANALYZE';
+        analyzeBtn.disabled = false;
+      }
+    }
+  }
+
+  private showAnalysisModal(analysis: JournalAnalysisResult): void {
+    const lensesHtml = analysis.lens_insights
+      .map(
+        lens => `
+          <div class="modal-lens-card">
+            <div class="modal-lens-name">${this.escapeHtml(lens.lens)}</div>
+            <div class="modal-lens-analysis">${this.escapeHtml(lens.finding)}</div>
+            <div style="margin-top: 6px; font-size: 9px; color: var(--text-secondary);">
+              Confidence: ${(lens.confidence * 100).toFixed(0)}%
+            </div>
+          </div>
+        `
+      )
+      .join('');
+
+    const kbRefsHtml = analysis.kb_references.length > 0
+      ? `<div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-subtle);">
+           <strong style="color: var(--accent);">Knowledge Base References:</strong>
+           <div style="margin-top: 8px; font-size: 10px; color: var(--text-secondary); display: flex; flex-wrap: wrap; gap: 8px;">
+             ${analysis.kb_references.map(ref => `<span style="background: var(--surface-hover); padding: 4px 8px; border-radius: 2px;">${this.escapeHtml(ref)}</span>`).join('')}
+           </div>
+         </div>`
+      : '';
+
+    const modalHtml = `
+      <div style="margin-bottom: 16px;">
+        <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 12px;">
+          <strong>Summary:</strong><br>
+          ${this.escapeHtml(analysis.summary)}
+        </div>
+        ${analysis.region_detected ? `<div style="margin-top: 8px; font-size: 11px;"><strong>Detected Region:</strong> ${this.escapeHtml(analysis.region_detected)}</div>` : ''}
+      </div>
+      <div style="margin-bottom: 16px;">
+        <strong style="color: var(--accent);">Six-Lens Analysis:</strong>
+        <div class="modal-lenses-grid" style="margin-top: 12px;">
+          ${lensesHtml}
+        </div>
+      </div>
+      ${kbRefsHtml}
+    `;
+
+    this.modal.setContent(modalHtml, 'JOURNAL ANALYSIS');
+    this.modal.open();
   }
 
   private escapeHtml(text: string): string {
