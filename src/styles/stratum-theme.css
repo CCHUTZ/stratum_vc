@@ -73,23 +73,28 @@ body.variant-stratum .live-indicator {
 .header-time-container {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
   align-items: center;
+  width: auto;
 }
 
 .header-timezones {
   display: flex;
-  gap: 12px;
+  flex-wrap: wrap;
+  gap: 10px 8px;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 9px;
   color: var(--text-secondary);
   letter-spacing: 0.05em;
+  justify-content: center;
+  width: fit-content;
 }
 
 .tz-item {
-  padding: 2px 6px;
-  border-left: 2px solid var(--accent);
-  padding-left: 8px;
+  padding: 2px 4px;
+  border-left: 1px solid var(--accent);
+  padding-left: 6px;
+  white-space: nowrap;
 }
 
 /* Force Intelligence Brief to full width */
