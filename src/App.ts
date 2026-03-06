@@ -87,6 +87,7 @@ import {
   PopulationExposurePanel,
   InvestmentsPanel,
   LanguageSelector,
+  VariantSelector,
 } from '@/components';
 import type { SearchResult } from '@/components/SearchModal';
 import { collectStoryData } from '@/services/story-data';
@@ -164,6 +165,7 @@ export class App {
   private statusPanel: StatusPanel | null = null;
   private exportPanel: ExportPanel | null = null;
   private languageSelector: LanguageSelector | null = null;
+  private variantSelector: VariantSelector | null = null;
   private searchModal: SearchModal | null = null;
   private mobileWarningModal: MobileWarningModal | null = null;
   private pizzintIndicator: PizzIntIndicator | null = null;
@@ -374,6 +376,7 @@ export class App {
     this.setupPizzIntIndicator();
     this.setupExportPanel();
     this.setupLanguageSelector();
+    this.setupVariantSelector();
     this.setupSearchModal();
     this.setupMapLayerHandlers();
     this.setupCountryIntel();
@@ -759,6 +762,19 @@ export class App {
       headerRight.insertBefore(this.languageSelector.getElement(), searchBtn);
     } else if (headerRight) {
       headerRight.insertBefore(this.languageSelector.getElement(), headerRight.firstChild);
+    }
+  }
+
+  private setupVariantSelector(): void {
+    this.variantSelector = new VariantSelector();
+    const headerRight = this.container.querySelector('.header-right');
+    const searchBtn = this.container.querySelector('#searchBtn');
+
+    if (headerRight && searchBtn) {
+      // Insert before search button (after language selector)
+      headerRight.insertBefore(this.variantSelector.getElement(), searchBtn);
+    } else if (headerRight) {
+      headerRight.insertBefore(this.variantSelector.getElement(), headerRight.firstChild);
     }
   }
 
