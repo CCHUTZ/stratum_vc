@@ -7,44 +7,66 @@ export class CivilizationalScoringPanel extends Panel {
     super({
       id: 'stratum-scoring',
       title: '📊 CIVILIZATIONAL SCORING',
-      showCount: false
+      showCount: false,
     });
     this.render();
   }
 
   private render(): void {
+    const regions = ['Mexico', 'Israel', 'India'];
+    const emojis: Record<string, string> = {
+      Mexico: '🇲🇽',
+      Israel: '🇮🇱',
+      India: '🇮🇳',
+    };
+
+    const countriesHtml = regions
+      .map(region => {
+        const regionScore = scoreRegion(region, ALL_STRATUM_LOCATIONS);
+        const dominant = regionScore.dominantLens.replace(/_/g, ' ').toLowerCase();
+        const score = regionScore.overall.toFixed(1);
+        const scoreNum = parseFloat(score);
+
+        // Border color dinámico por score: rojo (bajo) → amarillo (medio) → verde (alto)
+        const borderColor =
+          scoreNum < 4 ? '#ff6b6b' : scoreNum < 6 ? '#ffa940' : '#00ff88';
+
+        return `
+          <div class="cs-country" style="border-left-color: ${borderColor};">
+            <span class="cs-name">${emojis[region]} ${region}</span>
+            <span class="cs-score">${score}</span>
+            <span class="cs-dominant">${dominant}</span>
+          </div>
+        `;
+      })
+      .join('');
+
     const html = `
-      <div class="ib-scoring">
-        <div class="ib-scoring-content">
-          ${['Mexico', 'Israel', 'India'].map(region => {
-            const regionScore = scoreRegion(region, ALL_STRATUM_LOCATIONS);
-            return `
-              <div class="ib-region-block">
-                <div class="ib-region-header">
-                  <span class="ib-region-name">${region}</span>
-                  <span class="ib-region-overall">${regionScore.overall.toFixed(1)}/10</span>
-                </div>
-                <div class="ib-lens-bars">
-                  ${Object.entries(regionScore.scores).map(([lens, score]) => `
-                    <div class="ib-lens-row">
-                      <span class="ib-lens-label">${lens.replace(/_/g, ' ')}</span>
-                      <div class="ib-lens-bar-container">
-                        <div class="ib-lens-bar" style="width: ${score}%; background: hsl(${score * 3.6}, 70%, 50%);"></div>
-                      </div>
-                      <span class="ib-lens-score">${score.toFixed(1)}</span>
-                    </div>
-                  `).join('')}
-                </div>
-                <div class="ib-dominant-lens">
-                  🔝 Dominant: ${regionScore.dominantLens.replace(/_/g, ' ')}
-                </div>
-              </div>
-            `;
-          }).join('')}
+      <div class="cs-panel">
+        <div class="cs-content">
+          ${countriesHtml}
         </div>
+        <button class="cs-recalc-btn" id="csRecalcBtn">🔄 RECALCULATE</button>
       </div>
     `;
 
     this.setContent(html);
+    this.attachEventListeners();
+  }
+
+  private attachEventListeners(): void {
+    setTimeout(() => {
+      const btn = this.element.querySelector('#csRecalcBtn') as HTMLButtonElement;
+      if (btn) {
+        btn.addEventListener('click', () => {
+          btn.textContent = '⏳ RECALCULATING...';
+          btn.disabled = true;
+
+          setTimeout(() => {
+            this.render();
+          }, 500);
+        });
+      }
+    }, 150);
   }
 }
