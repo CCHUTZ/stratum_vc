@@ -61,6 +61,7 @@ import {
   CivilizationalScoringPanel,
   JAObservatoryPanel,
   AIInsightsStratumPanel,
+  StratumChatPanel,
   SearchModal,
   MobileWarningModal,
   PizzIntIndicator,
@@ -2266,6 +2267,9 @@ export class App {
 
     const aiInsightsPanel = new AIInsightsStratumPanel();
     this.panels['stratum-ai-insights'] = aiInsightsPanel;
+
+    const stratumChatPanel = new StratumChatPanel();
+    this.panels['stratum-chat'] = stratumChatPanel;
 
     // New Regional Panels
     const africaPanel = new NewsPanel('africa', t('panels.africa'));

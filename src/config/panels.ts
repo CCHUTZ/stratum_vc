@@ -380,6 +380,7 @@ const STRATUM_PANELS: Record<string, PanelConfig> = {
   'stratum-scoring': { name: 'Civilizational Scoring', enabled: true, priority: 1 },
   'stratum-ja-observatory': { name: 'J&A Observatory', enabled: true, priority: 2 },
   'stratum-ai-insights': { name: 'AI Insights', enabled: true, priority: 2 },
+  'stratum-chat': { name: 'STRATUM Analysis', enabled: true, priority: 2 },
   stratum_tier1: { name: 'Core Analysis Feeds', enabled: true, priority: 1 },
   middle_east: { name: 'Middle East', enabled: true, priority: 2 },
   india: { name: 'India', enabled: true, priority: 2 },
