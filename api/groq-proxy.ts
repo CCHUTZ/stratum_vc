@@ -1,5 +1,8 @@
 export const config = { runtime: 'edge' };
 
+// Use environment variable directly (Vercel Edge injects at build time)
+const GROQ_API_KEY = process.env.GROQ_API_KEY;
+
 export default async function handler(req: Request) {
   if (req.method !== 'POST') {
     return new Response(JSON.stringify({ error: 'Method not allowed' }), {
@@ -8,14 +11,9 @@ export default async function handler(req: Request) {
     });
   }
 
-  // Get API key from environment (Vercel Edge compatible)
-  const apiKey = process.env.GROQ_API_KEY || '';
-
-  if (!apiKey || apiKey.length === 0) {
-    console.error('[GROQ-PROXY] GROQ_API_KEY missing. Available env keys:', Object.keys(process.env).filter(k => k.includes('GROQ') || k.includes('API')));
+  if (!GROQ_API_KEY) {
     return new Response(JSON.stringify({
-      error: 'GROQ_API_KEY not configured',
-      debug: { hasKey: !!apiKey, keyLength: apiKey?.length ?? 0 }
+      error: 'GROQ_API_KEY not configured in Vercel env'
     }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }
