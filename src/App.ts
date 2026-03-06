@@ -371,6 +371,7 @@ export class App {
         } else {
           headerRight.appendChild(menuElement);
         }
+        stratumMenu.init();
       }
     }
 

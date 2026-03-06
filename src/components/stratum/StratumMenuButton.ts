@@ -11,6 +11,12 @@ export class StratumMenuButton {
 
   constructor() {
     this.render();
+  }
+
+  /**
+   * Initialize event listeners (call after element is injected into DOM)
+   */
+  public init(): void {
     this.attachEventListeners();
   }
 
