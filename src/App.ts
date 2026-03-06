@@ -212,6 +212,9 @@ export class App {
     if (!el) throw new Error(`Container ${containerId} not found`);
     this.container = el;
 
+    // Add variant class to body for CSS targeting
+    document.body.classList.add(`variant-${SITE_VARIANT}`);
+
     this.isMobile = isMobileDevice();
     this.monitors = loadFromStorage<Monitor[]>(STORAGE_KEYS.monitors, []);
 
@@ -677,9 +680,35 @@ export class App {
 
   private startHeaderClock(): void {
     const el = document.getElementById('headerClock');
+    const tzEl = document.getElementById('headerTimezones');
     if (!el) return;
+
     const tick = () => {
       el.textContent = new Date().toUTCString().replace('GMT', 'UTC');
+
+      // Update timezones for STRATUM variant
+      if (tzEl) {
+        const now = new Date();
+        const timezones = [
+          { city: 'CDMX', offset: -6 },
+          { city: 'TEL AVIV', offset: 2 },
+          { city: 'NEW DELHI', offset: 5.5 },
+          { city: 'BRASÍLIA', offset: -3 },
+          { city: 'NEW YORK', offset: -5 },
+        ];
+
+        const tzHtml = timezones
+          .map(({ city, offset }) => {
+            const localTime = new Date(now.getTime() + offset * 60 * 60 * 1000);
+            const hours = String(localTime.getUTCHours()).padStart(2, '0');
+            const minutes = String(localTime.getUTCMinutes()).padStart(2, '0');
+            const seconds = String(localTime.getUTCSeconds()).padStart(2, '0');
+            return `<span class="tz-item">${city} ${hours}:${minutes}:${seconds}</span>`;
+          })
+          .join('');
+
+        tzEl.innerHTML = tzHtml;
+      }
     };
     tick();
     this.clockIntervalId = setInterval(tick, 1000);
@@ -1924,7 +1953,10 @@ export class App {
             <div class="panel-header-left">
               <span class="panel-title">${SITE_VARIANT === 'tech' ? t('panels.techMap') : t('panels.map')}</span>
             </div>
-            <span class="header-clock" id="headerClock"></span>
+            <div class="header-time-container">
+              <span class="header-clock" id="headerClock"></span>
+              <div class="header-timezones" id="headerTimezones"></div>
+            </div>
             <button class="map-pin-btn" id="mapPinBtn" title="${t('header.pinMap')}">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M12 17v5M9 10.76a2 2 0 01-1.11 1.79l-1.78.9A2 2 0 005 15.24V16a1 1 0 001 1h12a1 1 0 001-1v-.76a2 2 0 00-1.11-1.79l-1.78-.9A2 2 0 0115 10.76V7a1 1 0 011-1 1 1 0 001-1V4a1 1 0 00-1-1H8a1 1 0 00-1 1v1a1 1 0 001 1 1 1 0 011 1v3.76z"/>

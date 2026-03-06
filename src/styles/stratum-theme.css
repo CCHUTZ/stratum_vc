@@ -40,6 +40,58 @@
   --map-stroke: #1a3060;
 }
 
+/* ============================================================
+   STRATUM Header Cleanup — Remove Redundant Elements
+   ============================================================ */
+
+body.variant-stratum .header-center {
+  flex: 0;
+  margin: 0;
+}
+
+body.variant-stratum .panel-data-badge {
+  display: none;
+}
+
+body.variant-stratum .defcon-indicator {
+  display: none;
+}
+
+body.variant-stratum .credit-link {
+  display: none;
+}
+
+/* Keep visible: timezones, logo, live indicator, right menu */
+body.variant-stratum .live-indicator {
+  display: inline-block !important;
+}
+
+/* ============================================================
+   Header Timezones — STRATUM Intelligence Awareness
+   ============================================================ */
+
+.header-time-container {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+}
+
+.header-timezones {
+  display: flex;
+  gap: 12px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-secondary);
+  letter-spacing: 0.05em;
+}
+
+.tz-item {
+  padding: 2px 6px;
+  border-left: 2px solid var(--accent);
+  padding-left: 8px;
+}
+
 /* Force Intelligence Brief to full width */
 [data-panel="stratum-civilizational"] {
   grid-column: span 4 !important;
