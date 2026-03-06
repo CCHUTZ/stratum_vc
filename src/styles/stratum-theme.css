@@ -329,3 +329,13 @@ body.variant-stratum .live-indicator {
   line-height: 1.4;
   word-wrap: break-word;
 }
+
+/* ============================================================
+   Hide worldmonitor Discussion Widget — STRATUM only
+   ============================================================ */
+
+.variant-stratum .discussion-widget,
+.variant-stratum [class*="discussion"],
+.variant-stratum [class*="join-discussion"] {
+  display: none !important;
+}
