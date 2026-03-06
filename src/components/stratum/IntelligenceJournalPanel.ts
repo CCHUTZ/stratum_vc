@@ -91,13 +91,19 @@ export class IntelligenceJournalPanel extends Panel {
 
   private attachEventListeners(): void {
     setTimeout(() => {
+      console.log('[IntelligenceJournalPanel] Attaching event listeners');
       this.textarea = this.element?.querySelector('.ij-textarea') as HTMLTextAreaElement;
       const saveBtn = this.element?.querySelector('#ijSaveBtn') as HTMLButtonElement;
       const analyzeBtn = this.element?.querySelector('#ijAnalyzeBtn') as HTMLButtonElement;
       const deleteButtons = this.element?.querySelectorAll('.ij-note-delete');
 
+      console.log('[IntelligenceJournalPanel] Found buttons - save:', !!saveBtn, 'analyze:', !!analyzeBtn);
+
       if (saveBtn) {
-        saveBtn.addEventListener('click', () => this.saveNote());
+        saveBtn.addEventListener('click', () => {
+          console.log('[IntelligenceJournalPanel] Save button clicked');
+          this.saveNote();
+        });
         if (this.textarea) {
           this.textarea.addEventListener('keydown', (e) => {
             if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
@@ -108,7 +114,10 @@ export class IntelligenceJournalPanel extends Panel {
       }
 
       if (analyzeBtn && !this.isAnalyzing) {
-        analyzeBtn.addEventListener('click', () => this.analyzeNotes());
+        analyzeBtn.addEventListener('click', () => {
+          console.log('[IntelligenceJournalPanel] Analyze button clicked');
+          this.analyzeNotes();
+        });
       }
 
       deleteButtons?.forEach(btn => {
@@ -119,7 +128,8 @@ export class IntelligenceJournalPanel extends Panel {
           }
         });
       });
-    }, 150);
+      console.log('[IntelligenceJournalPanel] All event listeners attached');
+    }, 200);
   }
 
   private saveNote(): void {

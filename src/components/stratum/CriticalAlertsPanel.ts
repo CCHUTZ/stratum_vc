@@ -95,8 +95,15 @@ export class CriticalAlertsPanel extends Panel {
 
   private attachEventListeners(alerts: StratumAlert[]): void {
     setTimeout(() => {
+      console.log('[CriticalAlertsPanel] Attaching event listeners');
       const items = this.element?.querySelectorAll('[data-alert-index]');
-      if (!items) return;
+      console.log('[CriticalAlertsPanel] Found items:', items?.length);
+
+      if (!items || items.length === 0) {
+        console.warn('[CriticalAlertsPanel] No items found, retrying in 100ms');
+        setTimeout(() => this.attachEventListeners(alerts), 100);
+        return;
+      }
 
       items.forEach((item) => {
         const idx = parseInt((item as HTMLElement).dataset.alertIndex || '0');
@@ -104,10 +111,12 @@ export class CriticalAlertsPanel extends Panel {
         if (!alert) return;
 
         item.addEventListener('click', () => {
+          console.log('[CriticalAlertsPanel] Alert clicked:', alert.name);
           this.showAlertModal(alert);
         });
       });
-    }, 150);
+      console.log('[CriticalAlertsPanel] Event listeners attached to', items.length, 'items');
+    }, 200);
   }
 
   private showAlertModal(alert: StratumAlert): void {

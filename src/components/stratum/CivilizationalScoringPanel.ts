@@ -63,24 +63,35 @@ export class CivilizationalScoringPanel extends Panel {
 
   private attachEventListeners(): void {
     setTimeout(() => {
+      console.log('[CivilizationalScoringPanel] Attaching event listeners');
+
       // Region click handlers
       const regionItems = this.element?.querySelectorAll('[data-region-index]');
-      if (regionItems) {
-        regionItems.forEach((item) => {
-          const idx = parseInt((item as HTMLElement).dataset.regionIndex || '0');
-          const region = this.regions[idx];
-          if (region) {
-            item.addEventListener('click', () => {
-              this.showRegionModal(region);
-            });
-          }
-        });
+      console.log('[CivilizationalScoringPanel] Found region items:', regionItems?.length);
+
+      if (!regionItems || regionItems.length === 0) {
+        console.warn('[CivilizationalScoringPanel] No region items found, retrying in 100ms');
+        setTimeout(() => this.attachEventListeners(), 100);
+        return;
       }
+
+      regionItems.forEach((item) => {
+        const idx = parseInt((item as HTMLElement).dataset.regionIndex || '0');
+        const region = this.regions[idx];
+        if (region) {
+          item.addEventListener('click', () => {
+            console.log('[CivilizationalScoringPanel] Region clicked:', region);
+            this.showRegionModal(region);
+          });
+        }
+      });
+      console.log('[CivilizationalScoringPanel] Region listeners attached');
 
       // Recalculate button
       const btn = this.element?.querySelector('#csRecalcBtn') as HTMLButtonElement;
       if (btn) {
         btn.addEventListener('click', () => {
+          console.log('[CivilizationalScoringPanel] Recalculate clicked');
           btn.textContent = '⏳ RECALCULATING...';
           btn.disabled = true;
 
@@ -88,8 +99,9 @@ export class CivilizationalScoringPanel extends Panel {
             this.render();
           }, 500);
         });
+        console.log('[CivilizationalScoringPanel] Recalculate button listener attached');
       }
-    }, 150);
+    }, 200);
   }
 
   private showRegionModal(region: string): void {
