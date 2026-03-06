@@ -10,7 +10,7 @@ export class StratumModal {
 
   constructor() {
     this.createElements();
-    this.attachEventListeners();
+    this.setupGlobalListeners();
   }
 
   private createElements(): void {
@@ -23,13 +23,8 @@ export class StratumModal {
     this.container.className = 'stratum-modal';
   }
 
-  private attachEventListeners(): void {
-    if (!this.backdrop || !this.container) return;
-
-    // Close on backdrop click
-    this.backdrop.addEventListener('click', () => this.close());
-
-    // Close on escape key
+  private setupGlobalListeners(): void {
+    // Close on escape key - setup once globally
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && this.isOpen) {
         this.close();
@@ -65,10 +60,15 @@ export class StratumModal {
   }
 
   public open(): void {
-    if (!this.backdrop || !this.container) return;
+    if (!this.backdrop || !this.container) {
+      console.error('[StratumModal] Elements not initialized');
+      return;
+    }
 
     if (!this.backdrop.parentElement) {
       document.body.appendChild(this.backdrop);
+      // Attach click listener when backdrop enters DOM
+      this.backdrop.addEventListener('click', () => this.close());
     }
     if (!this.container.parentElement) {
       document.body.appendChild(this.container);
@@ -79,11 +79,13 @@ export class StratumModal {
       if (this.backdrop && this.container) {
         this.backdrop.classList.add('open');
         this.container.classList.add('open');
+        console.log('[StratumModal] Opened with classes added');
       }
     });
 
     this.isOpen = true;
     document.body.style.overflow = 'hidden';
+    console.log('[StratumModal] Modal opened, overflow hidden');
   }
 
   public close(): void {
