@@ -346,3 +346,10 @@ body.variant-stratum .live-indicator {
 
 .variant-stratum .pizzint-defcon { display: none !important; }
 .variant-stratum .copy-link-btn { display: none !important; }
+
+/* Ocultar botones individuales en STRATUM — van al menú */
+.variant-stratum .theme-toggle-btn { display: none !important; }
+.variant-stratum .sources-btn { display: none !important; }
+.variant-stratum .search-btn { display: none !important; }
+
+/* Mantener visible: .fullscreen-btn, .settings-btn (PANELS) */
