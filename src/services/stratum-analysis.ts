@@ -133,16 +133,8 @@ export async function analyzeWithStratum(
   // Auto-detect region from input if not provided
   const detectedRegion = region || detectRegionFromInput(input);
   const geoContext = detectedRegion ?? 'Global';
-  const apiKey = import.meta.env.VITE_GROQ_API_KEY;
 
-  // Debug: log API key presence
-  console.log('[STRATUM] API key present:', !!apiKey, 'Key length:', apiKey?.length ?? 0);
-
-  // Fallback to mock if no API key
-  if (!apiKey) {
-    console.warn('[STRATUM] VITE_GROQ_API_KEY not configured, using mock fallback');
-    return getMockFallback(geoContext);
-  }
+  console.log('[STRATUM] Calling Groq via /api/groq-proxy');
 
   try {
     const response = await fetch('/api/groq-proxy', {
