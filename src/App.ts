@@ -60,6 +60,7 @@ import {
   CriticalAlertsPanel,
   CivilizationalScoringPanel,
   JAObservatoryPanel,
+  IntelligenceJournalPanel,
   AIInsightsStratumPanel,
   StratumChatPanel,
   SearchModal,
@@ -2286,6 +2287,9 @@ export class App {
 
     const stratumChatPanel = new StratumChatPanel();
     this.panels['stratum-chat'] = stratumChatPanel;
+
+    const journalPanel = new IntelligenceJournalPanel();
+    this.panels['stratum-journal'] = journalPanel;
 
     // New Regional Panels
     const africaPanel = new NewsPanel('africa', t('panels.africa'));

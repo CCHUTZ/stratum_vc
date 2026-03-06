@@ -18,6 +18,7 @@ export * from './stratum/CivilizationalScoringPanel';
 export * from './stratum/JAObservatoryPanel';
 export * from './stratum/AIInsightsStratumPanel';
 export * from './stratum/StratumChatPanel';
+export * from './stratum/IntelligenceJournalPanel';
 export * from './SearchModal';
 export * from './MobileWarningModal';
 export * from './PizzIntIndicator';
