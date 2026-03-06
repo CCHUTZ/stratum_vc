@@ -135,6 +135,9 @@ export async function analyzeWithStratum(
   const geoContext = detectedRegion ?? 'Global';
   const apiKey = import.meta.env.VITE_GROQ_API_KEY;
 
+  // Debug: log API key presence
+  console.log('[STRATUM] API key present:', !!apiKey, 'Key length:', apiKey?.length ?? 0);
+
   // Fallback to mock if no API key
   if (!apiKey) {
     console.warn('[STRATUM] VITE_GROQ_API_KEY not configured, using mock fallback');
