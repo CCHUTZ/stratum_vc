@@ -13,7 +13,6 @@ export class StratumChatPanel extends Panel {
       showCount: false
     });
     this.render();
-    this.attachEventListeners();
   }
 
   private render(): void {
@@ -192,6 +191,9 @@ export class StratumChatPanel extends Panel {
     this.textarea = this.element.querySelector('.stratum-textarea');
     this.analyzeButton = this.element.querySelector('.stratum-analyze-btn');
     this.responseArea = this.element.querySelector('.stratum-response-area');
+
+    // Attach listeners after DOM elements are cached
+    this.attachEventListeners();
   }
 
   private attachEventListeners(): void {
