@@ -31,7 +31,7 @@ export class StratumMenuButton {
     const button = document.createElement('button');
     button.id = 'stratumMenuBtn';
     button.className = 'stratum-menu-btn';
-    button.innerHTML = '◈ MENU';
+    button.innerHTML = 'MENU';
     button.title = 'STRATUM Navigation';
 
     const dropdown = document.createElement('div');
@@ -39,25 +39,25 @@ export class StratumMenuButton {
     dropdown.innerHTML = `
       <div class="stratum-menu-group">
         <button class="stratum-menu-item" data-action="search">
-          🔍 Search
+          Search
         </button>
         <button class="stratum-menu-item" data-action="theme">
-          ☀️ Theme
+          Theme
         </button>
         <button class="stratum-menu-item" data-action="sources">
-          📡 Sources
+          Sources
         </button>
         <button class="stratum-menu-item" data-action="language">
-          🌐 Language
+          Language
         </button>
       </div>
       <div class="stratum-menu-separator"></div>
       <div class="stratum-menu-group">
         <button class="stratum-menu-item stratum-menu-variant" data-variant="stratum">
-          🔮 STRATUM
+          STRATUM
         </button>
         <button class="stratum-menu-item stratum-menu-variant" data-variant="world">
-          🌍 WORLD
+          WORLD
         </button>
       </div>
     `;
