@@ -38,6 +38,7 @@ import { CountryBriefPage } from '@/components/CountryBriefPage';
 import { maybeShowDownloadBanner } from '@/components/DownloadBanner';
 import { mountCommunityWidget } from '@/components/CommunityWidget';
 import { CountryTimeline, type TimelineEvent } from '@/components/CountryTimeline';
+import { StratumMenuButton } from '@/components/stratum/StratumMenuButton';
 import { escapeHtml } from '@/utils/sanitize';
 import type { ParsedMapUrlState } from '@/utils';
 import {
@@ -356,6 +357,23 @@ export class App {
     }
 
     this.renderLayout();
+
+    // Inject STRATUM Menu Button in header (variant-specific)
+    if (SITE_VARIANT === 'stratum') {
+      const headerRight = this.container.querySelector('.header-right');
+      if (headerRight) {
+        const stratumMenu = new StratumMenuButton();
+        const menuElement = stratumMenu.render();
+        // Insert after fullscreen button, before settings button
+        const settingsBtn = headerRight.querySelector('.settings-btn');
+        if (settingsBtn) {
+          settingsBtn.parentNode?.insertBefore(menuElement, settingsBtn);
+        } else {
+          headerRight.appendChild(menuElement);
+        }
+      }
+    }
+
     this.startHeaderClock();
     this.signalModal = new SignalModal();
     this.signalModal.setLocationClickHandler((lat, lon) => {

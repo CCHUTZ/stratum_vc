@@ -353,3 +353,97 @@ body.variant-stratum .live-indicator {
 .variant-stratum .search-btn { display: none !important; }
 
 /* Mantener visible: .fullscreen-btn, .settings-btn (PANELS) */
+
+/* ============================================================
+   STRATUM Menu Button — Consolidated Navigation
+   ============================================================ */
+
+.stratum-menu-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.stratum-menu-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--accent);
+  padding: 6px 12px;
+  border-radius: 3px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.stratum-menu-btn:hover {
+  background: var(--surface);
+  border-color: var(--accent);
+  box-shadow: 0 0 8px rgba(74, 158, 255, 0.3);
+}
+
+.stratum-menu-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  min-width: 180px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-8px);
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+.stratum-menu-dropdown.open {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.stratum-menu-group {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 0;
+}
+
+.stratum-menu-item {
+  background: transparent;
+  border: none;
+  color: var(--text);
+  padding: 10px 16px;
+  text-align: left;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.stratum-menu-item:hover {
+  background: var(--surface-active);
+  color: var(--accent);
+}
+
+.stratum-menu-separator {
+  height: 1px;
+  background: var(--border);
+  margin: 6px 0;
+}
+
+.stratum-menu-variant {
+  color: var(--text-secondary);
+  font-size: 10px;
+}
+
+.stratum-menu-variant:hover {
+  color: var(--accent);
+}
