@@ -1,10 +1,8 @@
 /**
  * STRATUM Analysis Service
- * Leverages generateSummary with multi-lens framework for civilizational intelligence
+ * Direct Groq API client for Six Lenses civilizational intelligence framework
  * Falls back to mock analysis if API unavailable
  */
-
-import { generateSummary } from './summarization';
 
 export interface StratumLensResult {
   name: string;
@@ -28,21 +26,9 @@ const LENSES = [
   'Cognitive Warfare'
 ];
 
-const LENSES_SYSTEM_PROMPT = `Analyze through Six Lenses of civilizational intelligence:
-
-1. Sacred Identity — religious/sacred sites, identity markers (score 1-10)
-2. Demographic — population dynamics, migration, ethnic composition (score 1-10)
-3. Humiliation — historical grievances, trauma narratives (score 1-10)
-4. Religious Networks — transnational religious coordination (score 1-10)
-5. Civilizational — inter-civilizational friction and clash (score 1-10)
-6. Cognitive Warfare — narrative control, information warfare (score 1-10)
-
-Return scores and 1-sentence analysis per lens in this format:
-[LENS_NAME] Score: [1-10]
-Analysis: [1-sentence insight]`;
-
 /**
  * Analyze a geopolitical event or phenomenon through STRATUM's six-lens framework
+ * Calls Groq API directly via fetch (client-side)
  * @param input Event description or geopolitical phenomenon
  * @param region Optional region for geographic context (default: 'Global')
  */
@@ -54,33 +40,93 @@ export async function analyzeWithStratum(
     return getMockFallback('Global');
   }
 
-  const headlines = [input, LENSES_SYSTEM_PROMPT];
   const geoContext = region ?? 'Global';
+  const apiKey = import.meta.env.VITE_GROQ_API_KEY;
+
+  // Fallback to mock if no API key
+  if (!apiKey) {
+    console.warn('[STRATUM] VITE_GROQ_API_KEY not configured, using mock fallback');
+    return getMockFallback(geoContext);
+  }
 
   try {
-    const result = await generateSummary(headlines, undefined, geoContext, 'en');
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: 'llama-3.1-8b-instant',
+        messages: [
+          {
+            role: 'system',
+            content: `You are STRATUM, a civilizational intelligence analyst specializing in geopolitical analysis through Six Lenses framework.
 
-    if (!result) {
-      console.warn('[STRATUM] generateSummary returned null, using fallback');
+Analyze the user's input through these lenses and respond in EXACT format:
+
+[Sacred Identity] Score: X
+Analysis: one sentence
+
+[Demographic] Score: X
+Analysis: one sentence
+
+[Humiliation] Score: X
+Analysis: one sentence
+
+[Religious Networks] Score: X
+Analysis: one sentence
+
+[Civilizational] Score: X
+Analysis: one sentence
+
+[Cognitive Warfare] Score: X
+Analysis: one sentence
+
+SUMMARY: one paragraph overall assessment
+
+Geographic context: ${geoContext}`
+          },
+          {
+            role: 'user',
+            content: input
+          }
+        ],
+        temperature: 0.3,
+        max_tokens: 800
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.warn('[STRATUM] Groq API error:', response.status, errorData);
       return getMockFallback(geoContext);
     }
 
-    const parsedLenses = parseLensesFromSummary(result.summary);
+    const data = await response.json();
+    const content = data.choices?.[0]?.message?.content;
+
+    if (!content) {
+      console.warn('[STRATUM] No content in Groq response');
+      return getMockFallback(geoContext);
+    }
+
+    const parsedLenses = parseLensesFromSummary(content);
 
     // If parsing failed or returned empty, use fallback
     if (parsedLenses.length === 0) {
-      console.warn('[STRATUM] Failed to parse lenses from summary, using fallback');
+      console.warn('[STRATUM] Failed to parse lenses from Groq response');
       return getMockFallback(geoContext);
     }
 
     return {
       lenses: parsedLenses,
-      summary: result.summary,
-      provider: result.provider,
+      summary: content,
+      provider: 'groq',
       region: geoContext,
     };
   } catch (error) {
-    console.warn('[STRATUM] analyzeWithStratum error:', error);
+    console.warn('[STRATUM] Direct Groq API call error:', error);
     return getMockFallback(geoContext);
   }
 }
