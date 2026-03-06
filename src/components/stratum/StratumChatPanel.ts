@@ -187,13 +187,16 @@ export class StratumChatPanel extends Panel {
 
     this.setContent(html);
 
-    // Cache DOM elements
-    this.textarea = this.element.querySelector('.stratum-textarea');
-    this.analyzeButton = this.element.querySelector('.stratum-analyze-btn');
-    this.responseArea = this.element.querySelector('.stratum-response-area');
+    // Wait for Panel's contentDebounceMs (150ms) to complete, then cache DOM elements and attach listeners
+    // This ensures this.content.innerHTML has been set before querySelector() is called
+    setTimeout(() => {
+      this.textarea = this.element.querySelector('.stratum-textarea');
+      this.analyzeButton = this.element.querySelector('.stratum-analyze-btn');
+      this.responseArea = this.element.querySelector('.stratum-response-area');
 
-    // Attach listeners after DOM elements are cached
-    this.attachEventListeners();
+      // Attach listeners after DOM elements are cached and available
+      this.attachEventListeners();
+    }, 150);
   }
 
   private attachEventListeners(): void {
