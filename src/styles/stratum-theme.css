@@ -339,3 +339,10 @@ body.variant-stratum .live-indicator {
 .variant-stratum [class*="join-discussion"] {
   display: none !important;
 }
+
+/* ============================================================
+   STRATUM header cleanup — hide worldmonitor elements
+   ============================================================ */
+
+.variant-stratum .pizzint-defcon { display: none !important; }
+.variant-stratum .copy-link-btn { display: none !important; }
