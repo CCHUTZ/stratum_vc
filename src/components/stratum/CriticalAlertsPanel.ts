@@ -1,13 +1,17 @@
 import { Panel } from '../Panel';
 import { getStratumAlerts, type StratumAlert } from '@/services/stratum-data-pipeline';
+import { StratumModal } from './StratumModal';
 
 export class CriticalAlertsPanel extends Panel {
+  private modal: StratumModal;
+
   constructor() {
     super({
       id: 'stratum-critical-alerts',
       title: '🔴 CRITICAL ALERTS',
       showCount: false,
     });
+    this.modal = new StratumModal();
     this.renderWithData();
   }
 
@@ -57,8 +61,8 @@ export class CriticalAlertsPanel extends Panel {
         <div class="ib-alerts-content">
           ${alerts
             .map(
-              alert => `
-                <div class="ib-alert-item">
+              (alert, idx) => `
+                <div class="ib-alert-item" data-alert-index="${idx}" style="cursor: pointer; transition: all 0.2s ease;" onmouseover="this.style.background='var(--surface-hover)'" onmouseout="this.style.background=''">
                   <div class="ib-alert-header">
                     <span class="ib-alert-name">${this.escapeHtml(alert.name)}</span>
                     <span class="ib-alert-intensity" style="background: hsl(${(5 - alert.intensity) * 12}, 70%, 50%);">
@@ -73,7 +77,7 @@ export class CriticalAlertsPanel extends Panel {
                   ${
                     alert.sources.length > 0
                       ? `<div class="ib-alert-sources" style="margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--border-subtle); font-size: 10px; color: var(--text-secondary);">
-                          ${alert.sources.length} sources | ${this.timeAgo(alert.lastUpdated)}
+                          ${alert.sources.length} sources | click for details
                         </div>`
                       : ''
                   }
@@ -86,6 +90,71 @@ export class CriticalAlertsPanel extends Panel {
     `;
 
     this.setContent(html);
+    this.attachEventListeners(alerts);
+  }
+
+  private attachEventListeners(alerts: StratumAlert[]): void {
+    setTimeout(() => {
+      const items = this.element?.querySelectorAll('[data-alert-index]');
+      if (!items) return;
+
+      items.forEach((item) => {
+        const idx = parseInt((item as HTMLElement).dataset.alertIndex || '0');
+        const alert = alerts[idx];
+        if (!alert) return;
+
+        item.addEventListener('click', () => {
+          this.showAlertModal(alert);
+        });
+      });
+    }, 150);
+  }
+
+  private showAlertModal(alert: StratumAlert): void {
+    const sourcesHtml = alert.sources
+      .map(
+        source => `
+          <div class="modal-source-item">
+            <div class="modal-source-title">${this.escapeHtml(source.title)}</div>
+            <div class="modal-source-meta">
+              <span>${this.escapeHtml(source.source)}</span>
+              <span>${this.timeAgo(new Date(source.date))}</span>
+              ${source.tone !== undefined ? `<span>Tone: ${source.tone.toFixed(1)}</span>` : ''}
+            </div>
+            <a href="${source.url}" target="_blank" rel="noopener" class="modal-source-link">
+              Read article →
+            </a>
+          </div>
+        `
+      )
+      .join('');
+
+    const modalHtml = `
+      <div style="margin-bottom: 16px;">
+        <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 12px;">
+          <strong>Region:</strong> ${this.escapeHtml(alert.region)}<br>
+          <strong>Primary Lens:</strong> ${this.escapeHtml(alert.primaryLens)}<br>
+          <strong>Intensity:</strong> ${alert.intensity}/5<br>
+          <strong>Phase:</strong> ${this.escapeHtml(alert.predictedPhase || 'Monitoring')}<br>
+          <strong>Updated:</strong> ${this.timeAgo(alert.lastUpdated)}
+        </div>
+      </div>
+      <div style="margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--border-subtle);">
+        <strong style="color: var(--accent);">Description:</strong>
+        <div style="margin-top: 8px; color: var(--text-secondary);">
+          ${this.escapeHtml(alert.description)}
+        </div>
+      </div>
+      <div>
+        <strong style="color: var(--accent);">Sources (${alert.sources.length}):</strong>
+        <div class="modal-sources-list" style="margin-top: 12px;">
+          ${sourcesHtml}
+        </div>
+      </div>
+    `;
+
+    this.modal.setContent(modalHtml, `ALERT: ${alert.name}`);
+    this.modal.open();
   }
 
   private escapeHtml(text: string): string {
